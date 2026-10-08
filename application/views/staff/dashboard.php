@@ -26,7 +26,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm text-center">
                 <div class="card-body">
-                    <h6 class="text-muted">Pending Reservations</h6>
+                    <h6 class="text-muted">Waiting Reservations</h6>
                     <h2 class="fw-bold text-danger"><?php echo (int) $pending; ?></h2>
                     <small class="text-muted">awaiting receipt</small>
                 </div>

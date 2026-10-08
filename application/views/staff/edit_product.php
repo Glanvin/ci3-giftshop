@@ -7,6 +7,8 @@
         </ol>
     </nav>
 
+    <button>Stock In</button>
+
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white"><h5 class="mb-0 fw-bold">Edit Product</h5></div>
         <div class="card-body">
