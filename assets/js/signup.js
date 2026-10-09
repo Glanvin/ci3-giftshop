@@ -34,9 +34,9 @@
     }
 
     function goToLogin() {
-        var overlay = document.getElementById('coinOverlay');
+        var overlay = document.getElementById('flipOverlay');
         if (!overlay) return;
-        var coin = overlay.querySelector('.coin');
+        var coin = overlay.querySelector('.flip-coin');
         if (coin) {
             coin.style.animation = 'none';
             coin.offsetHeight;
@@ -44,7 +44,7 @@
         }
         overlay.classList.add('show');
         setTimeout(function () {
-            window.location.href = 'login.php';
+            window.location.href = overlay.getAttribute('data-redirect') || 'auth/login';
         }, 950);
     }
 

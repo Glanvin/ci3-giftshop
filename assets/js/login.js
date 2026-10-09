@@ -6,7 +6,7 @@
         if (!overlay) return;
         overlay.classList.add('show');
         setTimeout(function () {
-            window.location.href = 'signup.php';
+            window.location.href = overlay.getAttribute('data-redirect') || 'auth/signup';
         }, 950);
     }
 

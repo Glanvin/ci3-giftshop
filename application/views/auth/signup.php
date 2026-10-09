@@ -1,4 +1,4 @@
-<div class="flip-overlay" id="flipOverlay">
+<div class="flip-overlay" id="flipOverlay" data-redirect="<?php echo site_url('auth/login'); ?>">
     <div class="flip-coin">
         <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
     </div>
