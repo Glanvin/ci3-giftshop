@@ -35,6 +35,11 @@ class Reservation_model extends CI_Model {
 		return $this->db->insert_id();
 	}
 
+	public function code_exists($code)
+	{
+		return $this->db->where('reservation_code', $code)->count_all_results('reservations') > 0;
+	}
+
 	// Inserts one line item, snapshotting the price at reservation time.
 	// Keeping price_at_time denormalized preserves the original order value.
 	public function add_item($reservation_id, $product_id, $quantity, $price_at_time)

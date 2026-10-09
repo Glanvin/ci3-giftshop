@@ -46,7 +46,7 @@
                 <div class="col-md-4 col-lg-3">
                     <div class="card product-card h-100">
                         <a href="<?php echo site_url('user/product/' . (int) $product['id']); ?>" class="text-decoration-none">
-                            <img src="<?php echo base_url(html_escape($product['image_url'])); ?>" alt="<?php echo html_escape($product['name']); ?>" class="card-img-top">
+                            <img src="<?php echo base_url(html_escape(giftshop_product_image_path($product['image_url']))); ?>" alt="<?php echo html_escape($product['name']); ?>" class="card-img-top">
                         </a>
                         <div class="card-body d-flex flex-column">
                             <a href="<?php echo site_url('user/product/' . (int) $product['id']); ?>" class="text-decoration-none">

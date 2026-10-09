@@ -70,6 +70,6 @@ if ( ! function_exists('render_notifications'))
 				. '</div>';
 		}
 
-		return '<div class="container-fluid notification-area px-3 px-md-4 mt-3">' . $html . '</div>';
+		return '<div class="container-fluid notification-area px-3 px-md-4">' . $html . '</div>';
 	}
 }

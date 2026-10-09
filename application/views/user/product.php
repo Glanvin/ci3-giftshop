@@ -11,7 +11,7 @@
     <div class="row g-5">
         <!-- Product Image -->
         <div class="col-md-6">
-            <img src="<?php echo base_url(html_escape($product['image_url'])); ?>"
+            <img src="<?php echo base_url(html_escape(giftshop_product_image_path($product['image_url']))); ?>"
                  alt="<?php echo html_escape($product['name']); ?>" class="img-fluid rounded shadow">
         </div>
 

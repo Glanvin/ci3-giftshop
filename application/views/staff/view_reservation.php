@@ -37,9 +37,10 @@
 
                     <?php if ($res['receipt_image']): ?>
                         <h6 class="fw-bold mt-3">Proof of Payment</h6>
-                        <div style="max-width: 320px;">
-                            <img src="<?php echo base_url(html_escape($res['receipt_image'])); ?>" class="img-fluid rounded border" alt="Receipt">
-                        </div>
+                        <?php $receipt_src = base_url(html_escape(giftshop_receipt_image_path($res['receipt_image']))); ?>
+                        <button type="button" class="btn p-0 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#receiptPreviewModal" aria-label="View receipt image">
+                            <img src="<?php echo $receipt_src; ?>" class="img-fluid rounded border" alt="Receipt" style="max-width: 320px; cursor: zoom-in;">
+                        </button>
                     <?php else: ?>
                         <p class="text-warning small mt-3"><i class="bi bi-exclamation-triangle"></i> No proof of payment uploaded yet.</p>
                     <?php endif; ?>
@@ -59,7 +60,7 @@
                                 <tr>
                                     <td>
                                         <?php if ($item['image_url']): ?>
-                                            <img src="<?php echo base_url(html_escape($item['image_url'])); ?>" class="rounded me-2" style="width:45px; height:45px; object-fit:cover;">
+                                            <img src="<?php echo base_url(html_escape(giftshop_product_image_path($item['image_url']))); ?>" class="rounded me-2" style="width:45px; height:45px; object-fit:cover;">
                                         <?php endif; ?>
                                         <?php echo html_escape($item['name']); ?>
                                     </td>
@@ -109,3 +110,20 @@
         </div>
     </div>
 </div>
+
+<?php if ($res['receipt_image']): ?>
+    <div class="modal fade" id="receiptPreviewModal" tabindex="-1" aria-labelledby="receiptPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="receiptPreviewModalLabel">Proof of Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="<?php echo $receipt_src; ?>" class="img-fluid rounded" alt="Receipt" style="max-height: 75vh;">
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>

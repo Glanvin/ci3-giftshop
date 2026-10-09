@@ -49,7 +49,7 @@
                                     </td>
                                     <td style="width:80px;">
                                         <?php if ( ! empty($item['image_url'])): ?>
-                                            <img src="<?php echo base_url(html_escape($item['image_url'])); ?>"
+                                            <img src="<?php echo base_url(html_escape(giftshop_product_image_path($item['image_url']))); ?>"
                                                  class="rounded" style="width:60px; height:60px; object-fit:cover;">
                                         <?php endif; ?>
                                     </td>
@@ -96,8 +96,9 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <h6 class="fw-bold">Notes for Staff</h6>
-                            <textarea name="notes" class="form-control" rows="3"
+                            <textarea name="notes" class="form-control" rows="3" maxlength="500"
                                       placeholder="Optional notes about your reservation..."><?php echo set_value('notes'); ?></textarea>
+                            <?php echo form_error('notes', '<small class="text-danger d-block mt-1">', '</small>'); ?>
                         </div>
                     </div>
                 </div>

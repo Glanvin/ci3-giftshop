@@ -59,7 +59,7 @@
                         <div class="col-md-4">
                             <a href="<?php echo site_url('shop/product/' . (int) $product['id']); ?>" class="text-decoration-none d-block h-100">
                                 <div class="card product-card h-100">
-                                    <img src="<?php echo base_url(html_escape($product['image_url'])); ?>" alt="<?php echo html_escape($product['name']); ?>" class="card-img-top">
+                                    <img src="<?php echo base_url(html_escape(giftshop_product_image_path($product['image_url']))); ?>" alt="<?php echo html_escape($product['name']); ?>" class="card-img-top">
                                     <div class="card-body d-flex flex-column">
                                         <h5 class="product-name"><?php echo html_escape($product['name']); ?></h5>
                                         <div class="product-meta">

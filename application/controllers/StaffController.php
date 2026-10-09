@@ -3,6 +3,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class StaffController extends CI_Controller {
 
+	private $sku_exclude_id = NULL;
+
 	// Loads the models, upload library and rule set every staff action needs.
 	// Acts as the access control: non-staff roles are bounced to login.
 	public function __construct()
@@ -39,21 +41,7 @@ class StaffController extends CI_Controller {
 	// The filter is whitelisted to active/low/out here, defaulting to all.
 	public function inventory()
 	{
-		$filter =$this->input->get('filter', TRUE);
-
-		$data = array(
-			'title' => 'Inventory - Staff',
-			'active' => 'inventory',
-			'filter' => in_array($filter, array('active', 'low', 'out'), TRUE) ?$filter : 'all',
-			'products' => $this->Product_model->get_by_filter($filter),
-			'counts' => $this->Product_model->get_counts(),
-			'categories' => $this->Category_model->get_all(),
-			'message' => $this->session->flashdata('message')
-		);
-
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/inventory',$data);
-		$this->load->view('templates/footer',$data);
+		$this->_render_inventory();
 	}
 
 	/**
@@ -68,60 +56,64 @@ class StaffController extends CI_Controller {
 	 */
 	public function add_category()
 	{
-		$name = trim($this->input->post('name', TRUE));
-
-		if ( ! empty($name)) {
-			$data = array('name' => $name);
-			$this->Category_model->add($data);
-			$this->session->set_flashdata('message', 'Category Added Successfully!');
-		} else {
-			$this->session->set_flashdata('message', 'Error: Category name cannot be empty.');
+		if ($this->input->method(TRUE) !== 'POST') {
+			redirect('staff/inventory');
 		}
 
+		$this->form_validation->set_error_delimiters('', '');
+		$this->form_validation->set_rules($this->config->item('giftshop_category'));
+
+		if ($this->form_validation->run() === FALSE) {
+			$this->_render_inventory('addCategoryModal');
+			return;
+		}
+
+		if ( ! $this->Category_model->add(array('name' => trim($this->input->post('name', TRUE))))) {
+			set_notification('danger', 'Could not save the category. Please try again.');
+		} else {
+			set_notification('success', 'Category added successfully.');
+		}
 		redirect('staff/inventory');
 	}
 
 	public function add_product()
 	{
-		if ($this->input->post()) {$this->form_validation->set_rules($this->config->item('giftshop_product'));$this->form_validation->set_error_delimiters('', '');
-
-			if ($this->form_validation->run() === TRUE) {
-				$sku =$this->input->post('sku', TRUE);
-				$status =$this->input->post('status', TRUE);
-
-				if ($sku && $this->Product_model->sku_exists($sku)) {
-					$this->session->set_flashdata('message', "Error: SKU '$sku' already exists!");
-					redirect('staff/inventory');
-				}
-
-				$upload =$this->_upload_product_image('product_' . time() . '_');
-
-				if ($upload['error'] !== NULL) {
-					$this->session->set_flashdata('message',$upload['error']);
-					redirect('staff/inventory');
-				}
-
-				$product = array(
-					'name' => $this->input->post('name', TRUE),
-					'category_id' => (int) $this->input->post('category_id'),
-					'description' => $this->input->post('description', TRUE),
-					'price' => $this->input->post('price'),
-					'stock_quantity' => (int) $this->input->post('stock_quantity'),
-					'sku' => $sku,
-					'size' => $this->input->post('size', TRUE),
-					'color' => $this->input->post('color', TRUE),
-					'status' => $status,
-					'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int) $this->input->post('low_stock_threshold', TRUE) : 10, 					'image_url' =>$upload['image_url']
-				);
-
-				$this->Product_model->add($product);$this->session->set_flashdata('message', 'Product Added Successfully!');
-				redirect('staff/inventory');
-			}
-
-			$this->session->set_flashdata('message', validation_errors() ?: 'Please correct the highlighted fields.');
+		if ($this->input->method(TRUE) !== 'POST') {
 			redirect('staff/inventory');
 		}
 
+		$this->form_validation->set_error_delimiters('', '');
+		$this->form_validation->set_rules($this->config->item('giftshop_product'));
+		if ($this->form_validation->run() === FALSE) {
+			$this->_render_inventory('addProductModal');
+			return;
+		}
+
+		$upload = $this->_upload_product_image('product_' . time() . '_');
+		if ($upload['error'] !== NULL) {
+			$this->_render_inventory('addProductModal', $upload['error']);
+			return;
+		}
+
+		$product = array(
+			'name' => $this->input->post('name', TRUE),
+			'category_id' => (int) $this->input->post('category_id'),
+			'description' => $this->input->post('description', TRUE),
+			'price' => $this->input->post('price'),
+			'stock_quantity' => (int) $this->input->post('stock_quantity'),
+			'sku' => $this->input->post('sku', TRUE),
+			'size' => $this->input->post('size', TRUE),
+			'color' => $this->input->post('color', TRUE),
+			'status' => $this->input->post('status', TRUE),
+			'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int) $this->input->post('low_stock_threshold', TRUE) : 10,
+			'image_url' => $upload['image_url']
+		);
+
+		if ($this->Product_model->add($product)) {
+			set_notification('success', 'Product added successfully.');
+		} else {
+			set_notification('danger', 'Could not save the product. Please try again.');
+		}
 		redirect('staff/inventory');
 	}
 
@@ -133,36 +125,33 @@ class StaffController extends CI_Controller {
 	 */
 	public function process_stock_in()
 	{
-		if ($this->input->post()) {
-			$product_id   = (int)$this->input->post('product_id', TRUE);
-			$quantity     = (int)$this->input->post('quantity', TRUE);
-			$reference_no =$this->input->post('reference_no', TRUE);
-			$supplier     =$this->input->post('supplier', TRUE);
-			$notes        = $this->input->post('notes', TRUE);
-			$user_id      =$this->session->userdata('user_id');
-
-			if ($product_id <= 0 || $quantity <= 0) {$this->session->set_flashdata('error', 'Please select a valid product and enter a positive quantity.');
-				redirect('staff/inventory');
-			}
-
-			$product = $this->Product_model->get_by_id($product_id, FALSE);
-			if ( ! $product) {$this->session->set_flashdata('error', 'Selected product was not found.');
-				redirect('staff/inventory');
-			}
-
-			$success =$this->Product_model->process_stock_in(
-				$product_id,$quantity, 
-				$reference_no,$supplier, 
-				$notes, 
-				$user_id
-			);
-
-			if ($success) {$this->session->set_flashdata('success', "Successfully added {$quantity} unit(s) to <strong>" . html_escape($product['name']) . "</strong>.");
-			} else {
-				$this->session->set_flashdata('error', 'Failed to update stock quantity. Please try again.');
-			}
+		if ($this->input->method(TRUE) !== 'POST') {
+			redirect('staff/inventory');
 		}
 
+		$this->form_validation->set_error_delimiters('', '');
+		$this->form_validation->set_rules($this->config->item('giftshop_stock_in'));
+		if ($this->form_validation->run() === FALSE) {
+			$this->_render_inventory('stockInModal');
+			return;
+		}
+
+		$product_id = (int) $this->input->post('product_id', TRUE);
+		$quantity = (int) $this->input->post('quantity', TRUE);
+		$product = $this->Product_model->get_by_id($product_id, FALSE);
+		$success = $this->Product_model->process_stock_in(
+			$product_id,
+			$quantity,
+			$this->input->post('reference_no', TRUE),
+			$this->input->post('supplier', TRUE),
+			$this->input->post('notes', TRUE),
+			$this->session->userdata('user_id')
+		);
+		if ($success) {
+			set_notification('success', "Added {$quantity} unit(s) to {$product['name']}.");
+		} else {
+			set_notification('danger', 'Failed to update stock quantity. Please try again.');
+		}
 		redirect('staff/inventory');
 	}
 
@@ -182,13 +171,21 @@ class StaffController extends CI_Controller {
      */
     public function delete_category($id)
     {
-        $this->Category_model->delete((int) $id);
-        $this->session->set_flashdata('message', 'Category deleted successfully!');
+        if ($this->input->method(TRUE) !== 'POST') {
+            redirect('staff/inventory');
+        }
+
+        if ($this->Category_model->delete((int) $id)) {
+            set_notification('success', 'Category deleted successfully.');
+        } else {
+            set_notification('danger', 'Could not delete the category. Remove its products first.');
+        }
         redirect('staff/inventory');
     }
 	public function edit_product($id)
 	{
 		$this->load->helper('pricing');
+		$this->sku_exclude_id = (int) $id;
 		$product = $this->Product_model->get_by_id((int) $id, FALSE);
 
 		if ( ! $product) {
@@ -196,13 +193,15 @@ class StaffController extends CI_Controller {
 		}
 
 		$error = NULL;
+		$manual_field_errors = array();
 		if ($this->input->post('update')) {
+			$this->form_validation->set_error_delimiters('', '');
 			$rules = $this->config->item('giftshop_product');
 			foreach ($rules as &$rule) {
 				if ($rule['field'] === 'price') {
 					$rule['label'] = 'Base Price';
-					$rule['rules'] = 'required|trim|regex_match[/^[0-9]{1,8}(?:[.][0-9]{1,2})?$/D]';
-					$rule['errors'] = array('regex_match' => 'Base Price must be nonnegative with up to two decimal places and at most ₱99,999,999.99.');
+					$rule['rules'] = 'required|trim|regex_match[/^[0-9]{1,8}(?:[.][0-9]{1,2})?$/D]|greater_than[0]';
+					$rule['errors'] = array('regex_match' => 'Base Price must have up to two decimal places and be at most ₱99,999,999.99.', 'greater_than' => 'Base Price must be greater than zero.');
 				}
 			}
 			unset($rule);
@@ -218,6 +217,7 @@ class StaffController extends CI_Controller {
 			$posted_markup = $this->input->post('markup_percent');
 			if (($posted_price !== NULL && ! is_string($posted_price)) || ($posted_markup !== NULL && ! is_string($posted_markup))) {
 				$error = 'Base Price and Markup must each be a single numeric value.';
+				$manual_field_errors['price'] = $error;
 			} elseif ($this->form_validation->run() === FALSE) {
 				$error = implode(' ', $this->form_validation->error_array());
 			} else {
@@ -227,12 +227,15 @@ class StaffController extends CI_Controller {
 
 				if ($total_price === NULL) {
 					$error = 'The selling price after markup cannot exceed ₱99,999,999.99.';
+					$manual_field_errors['markup_percent'] = $error;
 				} elseif ($sku && $this->Product_model->sku_exists($sku, (int) $id)) {
 					$error = "Error: SKU '$sku' already exists!";
+					$manual_field_errors['sku'] = $error;
 				} else {
 					$upload = $this->_upload_product_image('product_' . time() . '_');
 					if ($upload['error'] !== NULL) {
 						$error = $upload['error'];
+						$manual_field_errors['product_image'] = $error;
 					} else {
 						$fields = array(
 							'name' => $this->input->post('name', TRUE),
@@ -262,6 +265,7 @@ class StaffController extends CI_Controller {
 			'title' => 'Edit Product',
 			'active' => 'inventory',
 			'error' => $error,
+			'field_errors' => $manual_field_errors + $this->form_validation->error_array(),
 			'product' => $product,
 			'categories' => $this->Category_model->get_all()
 		);
@@ -275,7 +279,15 @@ class StaffController extends CI_Controller {
 	// Unguarded beyond the constructor's staff check; no confirmation step.
 	public function delete_product($id)
 	{
-		$this->Product_model->delete((int) $id);$this->session->set_flashdata('message', 'Product Deleted');
+		if ($this->input->method(TRUE) !== 'POST') {
+			redirect('staff/inventory');
+		}
+
+		if ($this->Product_model->delete((int) $id)) {
+			set_notification('success', 'Product deleted.');
+		} else {
+			set_notification('danger', 'Could not delete the product.');
+		}
 		redirect('staff/inventory');
 	}
 
@@ -337,9 +349,13 @@ class StaffController extends CI_Controller {
 	public function edit_reservation($id)
 	{
 		if ($this->input->post('update_status')) {
-			$new_status =$this->input->post('new_status', TRUE);
-			if (in_array($new_status, Reservation_model::STATUSES, TRUE)) {
-				$this->Reservation_model->update_status((int)$id, $new_status);$this->session->set_flashdata('res_message', 'Reservation status updated to <strong>' . ucfirst($new_status) . '</strong>.');
+			$this->form_validation->set_rules($this->config->item('giftshop_reservation_status'));
+			if ($this->form_validation->run() === TRUE) {
+				$new_status = $this->input->post('new_status', TRUE);
+				$this->Reservation_model->update_status((int) $id, $new_status);
+				set_notification('success', 'Reservation status updated to ' . ucfirst($new_status) . '.');
+			} else {
+				set_notification('danger', 'Choose a valid reservation status.');
 			}
 			redirect('staff/reservations');
 		}
@@ -398,8 +414,69 @@ class StaffController extends CI_Controller {
 	/*  Helpers                                                            */
 	/* ------------------------------------------------------------------ */
 
+	public function callback_category_exists($category_id)
+	{
+		if ($this->Category_model->exists($category_id)) {
+			return TRUE;
+		}
+		$this->form_validation->set_message('category_exists', 'Choose an available category.');
+		return FALSE;
+	}
+
+	public function callback_category_name_available($name)
+	{
+		if ( ! $this->Category_model->name_exists($name)) {
+			return TRUE;
+		}
+		$this->form_validation->set_message('category_name_available', 'This category already exists.');
+		return FALSE;
+	}
+
+	public function callback_sku_available($sku)
+	{
+		if (trim((string) $sku) === '' || ! $this->Product_model->sku_exists($sku, $this->sku_exclude_id)) {
+			return TRUE;
+		}
+		$this->form_validation->set_message('sku_available', 'This SKU is already in use.');
+		return FALSE;
+	}
+
+	public function callback_stock_product_exists($product_id)
+	{
+		if ($this->Product_model->get_by_id((int) $product_id, FALSE)) {
+			return TRUE;
+		}
+		$this->form_validation->set_message('stock_product_exists', 'Choose an available product.');
+		return FALSE;
+	}
+
+	private function _render_inventory($open_modal = '', $upload_error = NULL)
+	{
+		$filter = $this->input->get('filter', TRUE);
+		if ( ! in_array($filter, array('active', 'low', 'out'), TRUE)) {
+			$filter = 'all';
+		}
+
+		$data = array(
+			'title' => 'Inventory - Staff',
+			'active' => 'inventory',
+			'filter' => $filter,
+			'products' => $this->Product_model->get_by_filter($filter),
+			'all_products' => $this->Product_model->get_by_filter('all'),
+			'counts' => $this->Product_model->get_counts(),
+			'categories' => $this->Category_model->get_all(),
+			'message' => $this->session->flashdata('message'),
+			'open_modal' => $open_modal,
+			'upload_error' => $upload_error
+		);
+
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/inventory', $data);
+		$this->load->view('templates/footer', $data);
+	}
+
 	/**
-	 * Saves `product_image` into `product-images/` and returns its path.
+	 * Saves `product_image` into `uploads/products/` and returns its path.
 	 *
 	 * Never fails hard: a missing upload returns an empty path with a NULL
 	 * error so callers can treat the image as optional. The directory is
@@ -416,9 +493,11 @@ class StaffController extends CI_Controller {
 			return array('image_url' => '', 'error' => NULL);
 		}
 
-		$dir = FCPATH . 'product-images/';
+		$dir = FCPATH . 'uploads/products/';
 		if ( ! is_dir($dir)) {
-			mkdir($dir, 0755, TRUE);
+			if ( ! mkdir($dir, 0755, TRUE) && ! is_dir($dir)) {
+				return array('image_url' => '', 'error' => 'The product upload folder could not be created.');
+			}
 		}
 
 		$original = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($_FILES['product_image']['name']));
@@ -433,7 +512,7 @@ class StaffController extends CI_Controller {
 
 		if ($this->upload->do_upload('product_image')) {
 			$fdata =$this->upload->data();
-			return array('image_url' => 'product-images/' . $fdata['file_name'], 'error' => NULL);
+			return array('image_url' => 'uploads/products/' . $fdata['file_name'], 'error' => NULL);
 		}
 
 		return array('image_url' => '', 'error' => 'Error: ' . strip_tags($this->upload->display_errors()));

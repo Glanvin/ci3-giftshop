@@ -1,6 +1,6 @@
 <div class="flip-overlay" id="flipOverlay">
     <div class="flip-coin">
-        <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
+        <img src="<?php echo base_url('uploads/products/culogo.jpg'); ?>" alt="CU Logo">
     </div>
 </div>
 
@@ -8,7 +8,7 @@
 
     <div class="left-panel">
         <div class="logo-circle">
-            <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
+            <img src="<?php echo base_url('uploads/products/culogo.jpg'); ?>" alt="CU Logo">
         </div>
         <h2>Already a Member?</h2>
         <p>Sign in to manage your reservations and shop faster.</p>

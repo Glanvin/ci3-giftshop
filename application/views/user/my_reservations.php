@@ -12,6 +12,12 @@
             Your Reservation Code is <b><?php echo html_escape($this->session->flashdata('reservation_code')); ?></b>.
         </div>
     <?php endif; ?>
+    <?php if ( ! empty($receipt_success)): ?>
+        <div class="alert alert-success" role="status"><?php echo html_escape($receipt_success); ?></div>
+    <?php endif; ?>
+    <?php if ( ! empty($receipt_error) && empty($receipt_open_id)): ?>
+        <div class="alert alert-danger" role="alert"><?php echo html_escape($receipt_error); ?></div>
+    <?php endif; ?>
 
     <div class="card border-0 shadow-sm">
         <div class="table-responsive">
@@ -65,6 +71,14 @@
                             </td>
                             <td class="text-end">
                                 <a href="<?php echo site_url('user/reservation/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-danger">View</a>
+                                <?php if (in_array($row['status'], array('pending', 'confirmed', 'ready'), TRUE)): ?>
+                                    <button type="button" class="btn btn-sm btn-danger ms-1 receipt-upload-trigger"
+                                            data-reservation-id="<?php echo (int) $row['id']; ?>"
+                                            data-bs-toggle="modal" data-bs-target="#receiptUploadModal">
+                                        <i class="bi bi-upload"></i>
+                                        <?php echo empty($row['receipt_image']) ? 'Attach Receipt' : 'Replace Receipt'; ?>
+                                    </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -73,3 +87,46 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="receiptUploadModal" tabindex="-1" aria-labelledby="receiptUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <?php echo form_open_multipart('user/upload_receipt'); ?>
+            <input type="hidden" name="reservation_id" id="receipt-reservation-id" value="">
+            <input type="hidden" name="return_to" value="reservations">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="receiptUploadModalLabel">Attach Receipt</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="receipt-image" class="form-label">Receipt image (JPG, PNG or GIF, max 5MB)</label>
+                    <input type="file" id="receipt-image" name="receipt_image" class="form-control" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif">
+                    <?php if ( ! empty($receipt_error)): ?><small class="text-danger d-block mt-1"><?php echo html_escape($receipt_error); ?></small><?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-upload"></i> Upload Receipt</button>
+                </div>
+            </div>
+        <?php echo form_close(); ?>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var reservationInput = document.getElementById('receipt-reservation-id');
+    document.querySelectorAll('.receipt-upload-trigger').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (reservationInput) {
+                reservationInput.value = button.getAttribute('data-reservation-id') || '';
+            }
+        });
+    });
+    var openForId = <?php echo json_encode(isset($receipt_open_id) ? (int) $receipt_open_id : 0); ?>;
+    if (openForId && reservationInput) {
+        reservationInput.value = openForId;
+        var uploadModal = document.getElementById('receiptUploadModal');
+        if (uploadModal && window.bootstrap) bootstrap.Modal.getOrCreateInstance(uploadModal).show();
+    }
+});
+</script>

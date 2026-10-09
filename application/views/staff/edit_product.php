@@ -17,15 +17,17 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Product Name</label>
-                        <input type="text" name="name" class="form-control" required value="<?php echo set_value('name', $product['name']); ?>">
+                        <input type="text" name="name" class="form-control" value="<?php echo set_value('name', $product['name']); ?>">
+                        <?php if ( ! empty($field_errors['name'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['name']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">SKU</label>
                         <input type="text" name="sku" class="form-control" value="<?php echo set_value('sku', $product['sku']); ?>">
+                        <?php if ( ! empty($field_errors['sku'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['sku']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Category</label>
-                        <select name="category_id" class="form-select" required>
+                        <select name="category_id" class="form-select">
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?php echo (int) $cat['id']; ?>"
                                     <?php echo set_select('category_id', $cat['id'], $cat['id'] == $product['category_id']); ?>>
@@ -33,14 +35,17 @@
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if ( ! empty($field_errors['category_id'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['category_id']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label for="product-price" class="form-label">Base Price (₱)</label>
-                        <input type="number" id="product-price" name="price" class="form-control" step="0.01" min="0" max="99999999.99" required value="<?php echo set_value('price', $product['price']); ?>">
+                        <input type="number" id="product-price" name="price" class="form-control" step="0.01" min="0" max="99999999.99" value="<?php echo set_value('price', $product['price']); ?>">
+                        <?php if ( ! empty($field_errors['price'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['price']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label for="product-markup" class="form-label">Markup (%)</label>
                         <input type="number" id="product-markup" name="markup_percent" class="form-control" step="0.01" min="0" max="99999999.99" value="<?php echo set_value('markup_percent', '0'); ?>" aria-describedby="markup-help">
+                        <?php if ( ! empty($field_errors['markup_percent'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['markup_percent']); ?></small><?php endif; ?>
                         <small id="markup-help" class="text-muted d-block">Applied once when saved. Reopening starts from the saved price with 0% markup.</small>
                     </div>
                     <div class="col-md-6">
@@ -57,11 +62,13 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Stock Quantity</label>
-                        <input type="number" name="stock_quantity" class="form-control" min="0" required value="<?php echo set_value('stock_quantity', $product['stock_quantity']); ?>">
+                        <input type="number" name="stock_quantity" class="form-control" min="0" value="<?php echo set_value('stock_quantity', $product['stock_quantity']); ?>">
+                        <?php if ( ! empty($field_errors['stock_quantity'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['stock_quantity']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Low Stock Threshold</label>
                         <input type="number" name="low_stock_threshold" class="form-control" min="0" value="<?php echo set_value('low_stock_threshold', $product['low_stock_threshold']); ?>">
+                        <?php if ( ! empty($field_errors['low_stock_threshold'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['low_stock_threshold']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Status</label>
@@ -70,28 +77,33 @@
                             <option value="inactive" <?php echo set_select('status', 'inactive', $product['status'] == 'inactive'); ?>>Inactive</option>
                             <option value="out_of_stock" <?php echo set_select('status', 'out_of_stock', $product['status'] == 'out_of_stock'); ?>>Out of Stock</option>
                         </select>
+                        <?php if ( ! empty($field_errors['status'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['status']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Size</label>
                         <input type="text" name="size" class="form-control" value="<?php echo set_value('size', $product['size']); ?>">
+                        <?php if ( ! empty($field_errors['size'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['size']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Color</label>
                         <input type="text" name="color" class="form-control" value="<?php echo set_value('color', $product['color']); ?>">
+                        <?php if ( ! empty($field_errors['color'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['color']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" rows="3"><?php echo set_value('description', $product['description']); ?></textarea>
+                        <?php if ( ! empty($field_errors['description'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['description']); ?></small><?php endif; ?>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Product Image</label>
                         <?php if ($product['image_url']): ?>
                             <div class="mb-2">
-                                <img src="<?php echo base_url(html_escape($product['image_url'])); ?>" class="rounded border" style="height:70px;">
+                                <img src="<?php echo base_url(html_escape(giftshop_product_image_path($product['image_url']))); ?>" class="rounded border" style="height:70px;">
                                 <small class="text-muted ms-2">Leave blank to keep current image.</small>
                             </div>
                         <?php endif; ?>
                         <input type="file" name="product_image" class="form-control" accept="image/*">
+                        <?php if ( ! empty($field_errors['product_image'])): ?><small class="text-danger d-block"><?php echo html_escape($field_errors['product_image']); ?></small><?php endif; ?>
                         <small class="text-muted">JPG, PNG, GIF or WebP &bull; max 5MB</small>
                     </div>
                 </div>

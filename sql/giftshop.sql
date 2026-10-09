@@ -117,10 +117,10 @@ INSERT INTO users (full_name, email, password, role, student_id, department, sta
 INSERT INTO products
   (name, category_id, description, price, stock_quantity, sku, size, color, status, low_stock_threshold, image_url, created_at, updated_at)
 VALUES
-  ('StudyMate Academic Backpack', 4, 'Original StudyMate backpack for school and college.', 1299.00, 25, 'CU-BAG-001', NULL, 'Black', 'active', 5, 'product-images/1773833436_9-5-studymate-academic-backpack-for-school-and-college-with-original-imah3yhgaf5ckrz8.webp', NOW(), NOW()),
-  ('University Long-Sleeve Tee', 4, 'Comfortable official university long-sleeve shirt.', 750.00, 40, 'CU-TEE-LS', 'XL', 'White', 'active', 5, 'product-images/1773881773_s-l1200.jpg', NOW(), NOW()),
-  ('University Hoodie', 4, 'Official university hoodie, unisex fit.', 1200.00, 15, 'CU-HOOD-1', 'L', 'Maroon', 'active', 5, 'product-images/1774253752_university_hoodie.jpg', NOW(), NOW()),
-  ('Logo Notebook Set', 4, 'College-ruled notebook with capitol university logo.', 350.00, 60, 'CU-NOTE-1', NULL, 'White', 'active', 5, 'product-images/1774254945_$_57.jpg', NOW(), NOW()),
-  ('Alumni Mug', 4, 'Official collector alumni mug.', 280.00, 8, 'CU-MUG-01', NULL, 'Maroon', 'active', 5, 'product-images/1774267629_faye.jpg', NOW(), NOW()),
-  ('PE Uniform Shirt', 3, 'Standard PE uniform shirt.', 450.00, 30, 'CU-PE-SHT', 'M', 'Red', 'active', 5, 'product-images/1774268779_Untitled design (5).png', NOW(), NOW()),
-  ('School ID Lanyard', 4, 'Official lanyard with logo (pair of two).', 50.00, 0, 'CU-LAN-2', NULL, 'Maroon', 'out_of_stock', 5, 'product-images/1774338723_Untitled design (6).png', NOW(), NOW());
+  ('StudyMate Academic Backpack', 4, 'Original StudyMate backpack for school and college.', 1299.00, 25, 'CU-BAG-001', NULL, 'Black', 'active', 5, 'uploads/products/1773833436_9-5-studymate-academic-backpack-for-school-and-college-with-original-imah3yhgaf5ckrz8.webp', NOW(), NOW()),
+  ('University Long-Sleeve Tee', 4, 'Comfortable official university long-sleeve shirt.', 750.00, 40, 'CU-TEE-LS', 'XL', 'White', 'active', 5, 'uploads/products/1773881773_s-l1200.jpg', NOW(), NOW()),
+  ('University Hoodie', 4, 'Official university hoodie, unisex fit.', 1200.00, 15, 'CU-HOOD-1', 'L', 'Maroon', 'active', 5, 'uploads/products/1774253752_university_hoodie.jpg', NOW(), NOW()),
+  ('Logo Notebook Set', 4, 'College-ruled notebook with capitol university logo.', 350.00, 60, 'CU-NOTE-1', NULL, 'White', 'active', 5, 'uploads/products/1774254945_$_57.jpg', NOW(), NOW()),
+  ('Alumni Mug', 4, 'Official collector alumni mug.', 280.00, 8, 'CU-MUG-01', NULL, 'Maroon', 'active', 5, 'uploads/products/1774267629_faye.jpg', NOW(), NOW()),
+  ('PE Uniform Shirt', 3, 'Standard PE uniform shirt.', 450.00, 30, 'CU-PE-SHT', 'M', 'Red', 'active', 5, 'uploads/products/1774268779_Untitled design (5).png', NOW(), NOW()),
+  ('School ID Lanyard', 4, 'Official lanyard with logo (pair of two).', 50.00, 0, 'CU-LAN-2', NULL, 'Maroon', 'out_of_stock', 5, 'uploads/products/1774338723_Untitled design (6).png', NOW(), NOW());

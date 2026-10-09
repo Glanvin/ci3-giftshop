@@ -43,7 +43,7 @@ class ShopController extends CI_Controller {
 	}
 
 	// Same catalog as the public index, but behind a login and with add-to-cart.
-	// Uses the user header and passes the cart toast through for the banner.
+	// Uses the user header, which renders the shared flash notification toast.
 	public function browse()
 	{
 		if ( ! $this->session->userdata('user_id')) {
@@ -52,7 +52,6 @@ class ShopController extends CI_Controller {
 
 		$data = $this->catalog_data('shop');
 		$data['title'] = 'Shop - CU Giftshop';
-		$data['cart_toast'] = $this->session->flashdata('cart_toast');
 
 		$this->load->view('templates/user_header', $data);
 		$this->load->view('shop/browse', $data);
@@ -91,8 +90,12 @@ class ShopController extends CI_Controller {
 	{
 		$per_page = 9;
 
-		$search = $this->input->get('search', TRUE);
+		$search = substr(trim((string) $this->input->get('search', TRUE)), 0, 100);
 		$category = is_numeric($this->input->get('category', TRUE)) ? (int) $this->input->get('category', TRUE) : 0;
+		$category_map = $this->Category_model->get_map();
+		if ($category && ! array_key_exists($category, $category_map)) {
+			$category = 0;
+		}
 		$sort = $this->input->get('sort', TRUE);
 		$page = max(1, (int) $this->input->get('page', TRUE));
 
@@ -112,17 +115,17 @@ class ShopController extends CI_Controller {
 			'total' => $total,
 			'search' => $search,
 			'category' => $category,
-			'category_map' => $this->Category_model->get_map(),
+			'category_map' => $category_map,
 			'sort' => $sort,
 			'page' => $page,
 			'total_pages' => $total_pages
 		);
 	}
 
-	// Normalizes legacy "Product-Images" paths to the lowercase folder on disk.
+	// Normalizes legacy image paths to the current uploads folder.
 	// Static because views need it too, and it is a pure string transform.
 	public static function img_url($path)
 	{
-		return str_replace('Product-Images', 'product-images', (string) $path);
+		return giftshop_product_image_path($path);
 	}
 }

@@ -3,14 +3,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Category_model extends CI_Model {
 
-	// Static map used by the public/user shop filter dropdown.
-	const STATIC_MAP = array(
-		1 => 'Textbook',
-		2 => 'Uniform',
-		3 => 'PE Uniform',
-		4 => 'Merchandise'
-	);
-
 	// Loads the database handle for the categories queries below.
 	// Kept minimal: the query builder is the only dependency this model needs.
 	public function __construct()
@@ -27,11 +19,24 @@ class Category_model extends CI_Model {
 		return $this->db->get('categories')->result_array();
 	}
 
-	// Returns the hardcoded id => name map for the public filter dropdown.
-	// Static so the shop view can label products without another query.
+	// Returns the database-backed id => name map for shop category filters.
 	public function get_map()
 	{
-		return self::STATIC_MAP;
+		$map = array();
+		foreach ($this->get_all() as $category) {
+			$map[(int) $category['id']] = $category['name'];
+		}
+		return $map;
+	}
+
+	public function exists($id)
+	{
+		return $this->db->where('id', (int) $id)->count_all_results('categories') > 0;
+	}
+
+	public function name_exists($name)
+	{
+		return $this->db->where('name', trim($name))->count_all_results('categories') > 0;
 	}
 
 	/**

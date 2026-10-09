@@ -11,6 +11,7 @@ class CartController extends CI_Controller {
 		$this->load->library('cart');
 		$this->load->model('Product_model');
 		$this->load->model('Reservation_model');
+		$this->config->load('form_rules');
 
 		// Product names may contain characters outside the default whitelist.
 		$this->cart->product_name_safe = FALSE;
@@ -84,9 +85,9 @@ class CartController extends CI_Controller {
 	/**
 	 * Adds a product to the cart. POST `product_id` plus optional `quantity`.
 	 *
-	 * Quantity is clamped to a minimum of 1 and the product must be in
-	 * stock, otherwise the line is skipped silently. `image_url` is stored
-	 * as a cart option so the cart view can show the thumbnail. The
+	 * Quantity must be positive and the combined cart quantity cannot exceed
+	 * current stock. `image_url` is stored as a cart option so the cart view
+	 * can show the thumbnail. Success and failure use the shared flash toast. The
 	 * `redirect` field selects the destination: `browse` goes back to the
 	 * catalog, anything else to that product's detail page.
 	 *
@@ -94,23 +95,41 @@ class CartController extends CI_Controller {
 	 */
 	public function add()
 	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			redirect('shop/browse');
+		}
+
+		$this->form_validation->set_rules($this->config->item('giftshop_cart_add'));
+		if ($this->form_validation->run() === FALSE) {
+			set_notification('danger', 'Please enter a valid product and quantity.');
+			redirect('shop/browse');
+		}
+
 		$product_id = (int) $this->input->post('product_id');
-		$qty = max(1, (int) $this->input->post('quantity', TRUE));
+		$qty = (int) $this->input->post('quantity', TRUE);
 
 		$product = $this->Product_model->get_by_id($product_id, FALSE);
+		$cart_qty = 0;
+		foreach ($this->cart->contents() as $cart_item) {
+			if ((int) $cart_item['id'] === $product_id) {
+				$cart_qty += (int) $cart_item['qty'];
+			}
+		}
 
-		if ($product && (int) $product['stock_quantity'] > 0) {
+		if ($product && ($cart_qty + $qty) <= (int) $product['stock_quantity'] && $qty > 0) {
 			$this->cart->insert(array(
 				'id' => (string) $product['id'],
 				'qty' => $qty,
 				'price' => (float) $product['price'],
 				'name' => $product['name'],
 				'options' => array(
-					'image_url' => str_replace('Product-Images', 'product-images', (string) $product['image_url'])
+					'image_url' => ShopController::img_url($product['image_url'])
 				)
 			));
 
-			$this->session->set_flashdata('cart_toast', $product['name']);
+			set_notification('success', $product['name'] . ' was added to your cart.');
+		} else {
+			set_notification('warning', $product ? 'The requested quantity is not available.' : 'That product is no longer available.');
 		}
 
 		$dest = $this->input->post('redirect');
@@ -161,12 +180,19 @@ class CartController extends CI_Controller {
 	 * reserved line is dropped from the cart afterwards. An empty
 	 * selection or a failed transaction sets `reservation_error` and
 	 * redirects back to the cart, otherwise `reservation_success` and the
-	 * new `reservation_code` are flashed.
+	 * new year-first `reservation_code` is based on the first reserved
+	 * product's first two letters.
 	 *
 	 * @return void
 	 */
 	public function submit()
 	{
+		$this->form_validation->set_rules($this->config->item('giftshop_reservation'));
+		if ($this->form_validation->run() === FALSE) {
+			$this->index();
+			return;
+		}
+
 		$selected = array_filter((array) $this->input->post('selected_items', TRUE));
 		if (empty($selected)) {
 			$this->session->set_flashdata('reservation_error', 'Please check at least one item to reserve.');
@@ -192,7 +218,14 @@ class CartController extends CI_Controller {
 			redirect('cart');
 		}
 
-		$res_code = 'RES' . date('Ymd') . rand(1000, 9999);
+		$first_item = reset($items);
+		$first_product = $this->Product_model->get_by_id((int) $first_item['id'], FALSE);
+		$product_letters = $first_product
+			? strtoupper(substr(preg_replace('/[^a-z]/i', '', $first_product['name']), 0, 2))
+			: '';
+		$product_letters = str_pad($product_letters, 2, 'X');
+		$year = date('Y');
+		$res_code = $this->_new_reservation_code($year, $product_letters);
 		$expiry = date('Y-m-d H:i:s', strtotime('+7 days'));
 
 		$this->db->trans_start();
@@ -215,5 +248,17 @@ class CartController extends CI_Controller {
 		}
 
 		redirect('cart');
+	}
+
+	private function _new_reservation_code($year, $product_letters)
+	{
+		for ($attempt = 0; $attempt < 10; $attempt++) {
+			$code = $year . '-' . $product_letters . '-' . strtoupper(random_string('alnum', 6));
+			if ( ! $this->Reservation_model->code_exists($code)) {
+				return $code;
+			}
+		}
+
+		return $year . '-' . $product_letters . '-' . strtoupper(uniqid());
 	}
 }

@@ -94,7 +94,7 @@ $config['giftshop_product'] = array(
 	array(
 		'field' => 'category_id',
 		'label' => 'Category',
-		'rules' => 'required|numeric',
+		'rules' => 'required|integer|callback_category_exists',
 		'errors' => array(
 			'required' => 'Category is required.'
 		)
@@ -102,17 +102,19 @@ $config['giftshop_product'] = array(
 	array(
 		'field' => 'price',
 		'label' => 'Price',
-		'rules' => 'required|numeric'
+		'rules' => 'required|regex_match[/^[0-9]{1,8}(?:[.][0-9]{1,2})?$/D]|greater_than[0]',
+		'errors' => array('regex_match' => 'Enter a price with up to two decimal places.', 'greater_than' => 'Price must be greater than zero.')
 	),
 	array(
 		'field' => 'stock_quantity',
 		'label' => 'Stock Quantity',
-		'rules' => 'numeric'
+		'rules' => 'required|integer|greater_than_equal_to[0]'
 	),
 	array(
 		'field' => 'sku',
 		'label' => 'SKU',
-		'rules' => 'trim|max_length[50]'
+		'rules' => 'trim|max_length[50]|callback_sku_available',
+		'errors' => array('sku_available' => 'This SKU is already in use.')
 	),
 	array(
 		'field' => 'size',
@@ -137,6 +139,56 @@ $config['giftshop_product'] = array(
 	array(
 		'field' => 'low_stock_threshold',
 		'label' => 'Low Stock Threshold',
-		'rules' => 'numeric'
+		'rules' => 'integer|greater_than_equal_to[0]'
 	)
+);
+
+// Inventory category modal. The input name remains the key used by both
+// server-side feedback and the form's inline error message.
+$config['giftshop_category'] = array(
+	array(
+		'field' => 'name',
+		'label' => 'Category Name',
+		'rules' => 'required|trim|max_length[100]|callback_category_name_available',
+		'errors' => array('required' => 'Category name is required.', 'category_name_available' => 'This category already exists.')
+	)
+);
+
+// Stock-in modal.
+$config['giftshop_stock_in'] = array(
+	array(
+		'field' => 'product_id',
+		'label' => 'Product',
+		'rules' => 'required|integer|callback_stock_product_exists',
+		'errors' => array('required' => 'Select a product.')
+	),
+	array(
+		'field' => 'quantity',
+		'label' => 'Quantity',
+		'rules' => 'required|integer|greater_than[0]',
+		'errors' => array('required' => 'Enter a quantity.', 'greater_than' => 'Quantity must be at least 1.')
+	),
+	array('field' => 'reference_no', 'label' => 'Reference Number', 'rules' => 'trim|max_length[100]'),
+	array('field' => 'supplier', 'label' => 'Supplier', 'rules' => 'trim|max_length[150]'),
+	array('field' => 'notes', 'label' => 'Notes', 'rules' => 'trim|max_length[500]')
+);
+
+// The cart reservation form has a checkbox group plus optional staff notes.
+$config['giftshop_reservation'] = array(
+	array('field' => 'notes', 'label' => 'Notes', 'rules' => 'trim|max_length[500]')
+);
+
+// Cart add forms use product_id, quantity and redirect as their input names.
+$config['giftshop_cart_add'] = array(
+	array('field' => 'product_id', 'label' => 'Product', 'rules' => 'required|integer|greater_than[0]'),
+	array('field' => 'quantity', 'label' => 'Quantity', 'rules' => 'required|integer|greater_than[0]'),
+	array('field' => 'redirect', 'label' => 'Return Page', 'rules' => 'trim|in_list[browse,view]')
+);
+
+$config['giftshop_reservation_status'] = array(
+	array('field' => 'new_status', 'label' => 'Status', 'rules' => 'required|in_list[pending,confirmed,ready,completed,cancelled]')
+);
+
+$config['giftshop_receipt'] = array(
+	array('field' => 'reservation_id', 'label' => 'Reservation', 'rules' => 'required|integer|greater_than[0]')
 );

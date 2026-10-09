@@ -654,16 +654,18 @@ body.area-auth {
 .notification-area {
     position: fixed;
     top: 0;
-    left: 0;
     right: 0;
+    left: auto;
+    width: min(440px, 100vw);
+    box-sizing: border-box;
     z-index: 100000;
     pointer-events: none;
 }
 
 .notification-area .alert {
     pointer-events: auto;
-    max-width: 720px;
-    margin: 12px auto;
+    max-width: none;
+    margin: 12px 0 12px auto;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 

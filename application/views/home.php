@@ -31,16 +31,16 @@
             <!-- The slideshow/carousel -->
             <div class="carousel-inner">
                 <div class="carousel-item active">
-                    <img src="<?php echo base_url('product-images/carousel1.jpg'); ?>" alt="Slide 1" class="d-block w-100">
+                    <img src="<?php echo base_url('uploads/products/carousel1.jpg'); ?>" alt="Slide 1" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
-                    <img src="<?php echo base_url('product-images/carousel2.jpg'); ?>" alt="Slide 2" class="d-block w-100">
+                    <img src="<?php echo base_url('uploads/products/carousel2.jpg'); ?>" alt="Slide 2" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
-                    <img src="<?php echo base_url('product-images/carousel3.jpg'); ?>" alt="Slide 3" class="d-block w-100">
+                    <img src="<?php echo base_url('uploads/products/carousel3.jpg'); ?>" alt="Slide 3" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
-                    <img src="<?php echo base_url('product-images/carousel4.jpg'); ?>" alt="Slide 4" class="d-block w-100">
+                    <img src="<?php echo base_url('uploads/products/carousel4.jpg'); ?>" alt="Slide 4" class="d-block w-100">
                 </div>
             </div>
 

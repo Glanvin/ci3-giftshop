@@ -22,7 +22,7 @@ raw SQL in views.
 
    This creates `db_CUGiftshop` (categories, products, users, reservations,
    reservation_items) and loads demo users + sample products. Product
-   images are stored in `product-images/` (paths in the DB are relative, so
+   images are stored in `uploads/products/` (paths in the DB are relative, so
    they already work — no CodeIgniter `/index.php` prefix needed).
 
 2. Confirm DB credentials in `application/config/database.php`
@@ -68,9 +68,13 @@ original app's database (do not do this in production).
 The upload script imports the *existing* `giftshop` database as-is:
 
 - `users` — plaintext passwords are compared directly.
-- `products.image_url` — paths like `Product-Images/...` are normalized to
-  `product-images/...` at render time (`ShopController::img_url`), and the
-  CI3 `Upload` library writes new images into `product-images/`.
+- `products.image_url` — product images are stored in `uploads/products/` and
+  receipt images in `uploads/receipt/`. To migrate an existing database, move
+  files from `product-images/` (and `Product-Images/`, if present) into
+  `uploads/products/`, move files from `Receipts/` into `uploads/receipt/`,
+  then run `sql/migrate_upload_paths.sql` to update the saved paths.
+- The CI3 `Upload` library creates these folders when needed and writes new
+  product images and receipts into their respective folders.
 - `reservations` — a `receipt_image` column (absent in the original schema)
   is added by `sql/giftshop.sql`; `sql/giftshop.sql` targets a fresh
   database, so if a legacy `reservations` table already exists, run
