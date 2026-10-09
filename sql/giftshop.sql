@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS products (
   created_at          DATETIME      NOT NULL,
   updated_at          DATETIME      NOT NULL,
   PRIMARY KEY (id),
-  KEY idx_category (category_id)
+  KEY idx_category (category_id),
+  UNIQUE KEY sku (sku)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------------------------
@@ -75,7 +76,9 @@ CREATE TABLE IF NOT EXISTS reservations (
   created_at       DATETIME      NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_reservation_code (reservation_code),
-  KEY idx_reservations_status (status)
+  KEY idx_reservations_status (status),
+  KEY idx_reservations_user_created (user_id, created_at),
+  KEY idx_reservations_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------------------------
@@ -88,7 +91,8 @@ CREATE TABLE IF NOT EXISTS reservation_items (
   quantity       INT          NOT NULL DEFAULT 1,
   price_at_time  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   PRIMARY KEY (id),
-  KEY idx_item_reservation (reservation_id)
+  KEY idx_item_reservation (reservation_id),
+  KEY idx_item_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =============================================================

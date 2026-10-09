@@ -47,17 +47,16 @@ class Reservation_model extends CI_Model {
 		));
 	}
 
-	// Decrements stock with a raw set() so it cannot go negative via the ORM.
-	// Then flips the row to out_of_stock once the remaining quantity hits zero.
+	// Decrements stock in a single atomic UPDATE, clamping at zero.
+	// The status assignment is listed first so it reads the pre-decrement
+	// quantity; MySQL evaluates single-table SET clauses left to right.
 	public function decrement_stock($product_id, $quantity)
 	{
-		$this->db->set('stock_quantity', 'stock_quantity - ' . (int) $quantity, FALSE)
-			->where('id', $product_id)
-			->update('products');
+		$quantity = (int) $quantity;
 
-		$this->db->set('status', 'out_of_stock')
+		$this->db->set('status', 'IF(stock_quantity - ' . $quantity . " <= 0, 'out_of_stock', status)", FALSE)
+			->set('stock_quantity', 'GREATEST(stock_quantity - ' . $quantity . ', 0)', FALSE)
 			->where('id', $product_id)
-			->where('stock_quantity <=', 0)
 			->update('products');
 	}
 
@@ -80,13 +79,18 @@ class Reservation_model extends CI_Model {
 	/* ------------------------------------------------------------------ */
 
 	// One user's reservations, newest first, each with a line-item count.
-	// The count comes from a correlated subquery to avoid a second round trip.
+	// The count comes from a single grouped derived table, not a per-row
+	// correlated subquery, so the whole list is produced in one pass.
 	public function get_user_reservations($user_id)
 	{
 		return $this->db
-			->select('r.*,
-				(SELECT COUNT(*) FROM reservation_items WHERE reservation_id = r.id) AS item_count')
+			->select('r.*, COALESCE(ic.item_count, 0) AS item_count')
 			->from('reservations r')
+			->join(
+				'(SELECT reservation_id, COUNT(*) AS item_count FROM reservation_items GROUP BY reservation_id) ic',
+				'ic.reservation_id = r.id',
+				'left'
+			)
 			->where('r.user_id', $user_id)
 			->order_by('r.created_at', 'DESC')
 			->get()->result_array();
@@ -130,12 +134,17 @@ class Reservation_model extends CI_Model {
 
 	// Staff reservation queue, optionally narrowed to one status.
 	// $filter is re-validated against STATUSES here, not only by the caller.
+	// Item counts come from one grouped derived table shared by every row.
 	public function get_all($filter = 'all')
 	{
-		$this->db->select('r.*, u.full_name, u.email,
-			(SELECT COUNT(*) FROM reservation_items WHERE reservation_id = r.id) AS item_count');
+		$this->db->select('r.*, u.full_name, u.email, COALESCE(ic.item_count, 0) AS item_count');
 		$this->db->from('reservations r');
 		$this->db->join('users u', 'r.user_id = u.id');
+		$this->db->join(
+			'(SELECT reservation_id, COUNT(*) AS item_count FROM reservation_items GROUP BY reservation_id) ic',
+			'ic.reservation_id = r.id',
+			'left'
+		);
 
 		if ($filter !== 'all' && in_array($filter, self::STATUSES, TRUE)) {
 			$this->db->where('r.status', $filter);
@@ -146,13 +155,24 @@ class Reservation_model extends CI_Model {
 	}
 
 	// Counts reservations for every status in STATUSES, keyed by status name.
-	// Statuses with no rows are present with a zero so the tabs always render.
+	// A single GROUP BY replaces one COUNT query per status; missing
+	// statuses are still present with a zero so the tabs always render.
 	public function get_status_counts()
 	{
-		$counts = array();
-		foreach (self::STATUSES as $status) {
-			$counts[$status] = $this->db->where('status', $status)->count_all_results('reservations');
+		$counts = array_fill_keys(self::STATUSES, 0);
+
+		$rows = $this->db
+			->select('status, COUNT(*) AS total')
+			->group_by('status')
+			->get('reservations')
+			->result_array();
+
+		foreach ($rows as $row) {
+			if (array_key_exists($row['status'], $counts)) {
+				$counts[$row['status']] = (int) $row['total'];
+			}
 		}
+
 		return $counts;
 	}
 
@@ -196,21 +216,25 @@ class Reservation_model extends CI_Model {
 		return $this->db->count_all_results('reservations');
 	}
 
-	// Total, in-flight and pending counts for one user, in three queries.
+	// Total, in-flight and pending counts for one user, in a single query.
 	// "Active" is pending, confirmed or ready, i.e. anything not finalised.
 	public function user_stats($user_id)
 	{
-		$total = $this->db->where('user_id', $user_id)->count_all_results('reservations');
-		$active = $this->db
+		$row = $this->db
+			->select("
+				COUNT(*) AS total,
+				SUM(status IN ('pending', 'confirmed', 'ready')) AS active,
+				SUM(status = 'pending') AS pending
+			", FALSE)
 			->where('user_id', $user_id)
-			->where_in('status', array('pending', 'confirmed', 'ready'))
-			->count_all_results('reservations');
-		$pending = $this->db
-			->where('user_id', $user_id)
-			->where('status', 'pending')
-			->count_all_results('reservations');
+			->get('reservations')
+			->row_array();
 
-		return array('total' => $total, 'active' => $active, 'pending' => $pending);
+		return array(
+			'total' => (int) $row['total'],
+			'active' => (int) $row['active'],
+			'pending' => (int) $row['pending']
+		);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -290,12 +314,22 @@ class Reservation_model extends CI_Model {
 
 	// Splits products into ok, low and out buckets for the reports page.
 	// "Low" is 1-5 units and matches the threshold used by the inventory pills.
+	// A single boolean-SUM query replaces the previous three COUNT round trips.
 	public function stock_summary()
 	{
-		$stockOk = $this->db->where('stock_quantity >', 5)->count_all_results('products');
-		$stockLow = $this->db->where('stock_quantity >', 0)->where('stock_quantity <=', 5)->count_all_results('products');
-		$stockOut = $this->db->where('stock_quantity <=', 0)->count_all_results('products');
+		$row = $this->db
+			->select("
+				SUM(stock_quantity > 5) AS ok_count,
+				SUM(stock_quantity > 0 AND stock_quantity <= 5) AS low_count,
+				SUM(stock_quantity <= 0) AS out_count
+			", FALSE)
+			->get('products')
+			->row_array();
 
-		return array('ok' => $stockOk, 'low' => $stockLow, 'out' => $stockOut);
+		return array(
+			'ok' => (int) $row['ok_count'],
+			'low' => (int) $row['low_count'],
+			'out' => (int) $row['out_count']
+		);
 	}
 }

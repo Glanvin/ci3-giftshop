@@ -60,7 +60,7 @@ class Product_model extends CI_Model {
 	// Kept separate from get_catalog so pagination can count before fetching rows.
 	public function get_catalog_count($search = NULL,$category = NULL)
 	{
-		$this->db->from('products p');$this->db->join('categories c', 'p.category_id = c.id', 'left');
+		$this->db->from('products p');
 
 		if (!empty($search)) {$this->db->group_start()
 				->like('p.name', $search)
@@ -115,35 +115,61 @@ class Product_model extends CI_Model {
 	// $exclude_id lets the edit form keep its own SKU without a false clash.
 	public function sku_exists($sku,$exclude_id = NULL)
 	{
-		$this->db->where('sku',$sku);
+		$this->db->select('id')->where('sku',$sku);
 		if ($exclude_id !== NULL) {
 			$this->db->where('id !=',$exclude_id);
 		}
-		return $this->db->get('products')->num_rows() > 0;
+		return $this->db->limit(1)->get('products')->num_rows() > 0;
 	}
 
 	// Returns just id and name for every product, ready for a dropdown helper.
-	// No ordering, so callers that care should sort the result themselves.
 	public function get_options_for_select()
 	{
-		$this->db->select('id, name');
+		$this->db->select('id, name')->order_by('name', 'ASC');
 		return $this->db->get('products')->result_array();
 	}
 
-	// Counts products for the inventory filter pills, all in four queries.
-	// `out` is grouped so it matches zero stock or an out_of_stock status.
+	// Batch lookup of products by id, keyed by id for O(1) merging.
+	// Replaces a per-row get_by_id() loop when hydrating a list of items.
+	public function get_by_ids(array $ids)
+	{
+		$ids = array_values(array_unique(array_map('intval', $ids)));
+		if (empty($ids)) {
+			return array();
+		}
+
+		$rows = $this->db
+			->select('id, name, price, size, color, stock_quantity')
+			->where_in('id', $ids)
+			->get('products')
+			->result_array();
+
+		$keyed = array();
+		foreach ($rows as $row) {
+			$keyed[(int) $row['id']] = $row;
+		}
+		return $keyed;
+	}
+
+	// Counts products for the inventory filter pills, all in one query.
+	// Each bucket is a boolean SUM that mirrors the matching get_by_filter WHERE.
 	public function get_counts()
 	{
-		$countAll =$this->db->count_all('products');
-		$countActive =$this->db->where('status', 'active')->where('stock_quantity >', 5)->count_all_results('products');
-		$countLow =$this->db->where('stock_quantity >', 0)->where('stock_quantity <=', 5)->count_all_results('products');
-		$countOut =$this->db->where('stock_quantity <=', 0)->or_where('status', 'out_of_stock')->count_all_results('products');
+		$row = $this->db
+			->select("
+				COUNT(*) AS all_count,
+				SUM(status = 'active' AND stock_quantity > 5) AS active_count,
+				SUM(stock_quantity > 0 AND stock_quantity <= 5) AS low_count,
+				SUM(stock_quantity <= 0 OR status = 'out_of_stock') AS out_count
+			", FALSE)
+			->get('products')
+			->row_array();
 
 		return array(
-			'all' => $countAll,
-			'active' => $countActive,
-			'low' => $countLow,
-			'out' => $countOut
+			'all' => (int) $row['all_count'],
+			'active' => (int) $row['active_count'],
+			'low' => (int) $row['low_count'],
+			'out' => (int) $row['out_count']
 		);
 	}
 

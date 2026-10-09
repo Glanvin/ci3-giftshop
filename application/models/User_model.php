@@ -28,9 +28,11 @@ class User_model extends CI_Model {
 	}
 
 	// Fetches a user row by primary key, or NULL when the id is unknown.
-	// This is the session user lookup for the student dashboard.
+	// This is the session user lookup for the student dashboard; the
+	// password hash is deliberately left out of the selected columns.
 	public function find_by_id($id)
 	{
+		$this->db->select('id, full_name, email, role, phone, student_id, department, status, last_login, created_at');
 		return $this->db->get_where('users', array('id' => $id))->row_array();
 	}
 
