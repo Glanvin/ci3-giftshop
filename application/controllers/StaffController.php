@@ -8,12 +8,9 @@ class StaffController extends CI_Controller {
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('User_model');
-		$this->load->model('Product_model');
-		$this->load->model('Category_model');
-		$this->load->model('Reservation_model');
-		$this->load->library('upload');
-		$this->config->load('form_rules');
+		$this->load->model('User_model');$this->load->model('Product_model');
+		$this->load->model('Category_model');$this->load->model('Reservation_model');
+		$this->load->library('upload');$this->config->load('form_rules');
 
 		if ( ! $this->User_model->is_staff($this->session->userdata('role'))) {
 			redirect('auth/login');
@@ -33,30 +30,30 @@ class StaffController extends CI_Controller {
 			'recent' => $this->Reservation_model->get_recent(5)
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/dashboard', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/dashboard',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	// Product table for staff, filtered by the `filter` query string.
 	// The filter is whitelisted to active/low/out here, defaulting to all.
 	public function inventory()
 	{
-		$filter = $this->input->get('filter', TRUE);
+		$filter =$this->input->get('filter', TRUE);
 
 		$data = array(
 			'title' => 'Inventory - Staff',
 			'active' => 'inventory',
-			'filter' => in_array($filter, array('active', 'low', 'out'), TRUE) ? $filter : 'all',
+			'filter' => in_array($filter, array('active', 'low', 'out'), TRUE) ?$filter : 'all',
 			'products' => $this->Product_model->get_by_filter($filter),
 			'counts' => $this->Product_model->get_counts(),
 			'categories' => $this->Category_model->get_all(),
 			'message' => $this->session->flashdata('message')
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/inventory', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/inventory',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	/**
@@ -71,23 +68,21 @@ class StaffController extends CI_Controller {
 	 */
 	public function add_product()
 	{
-		if ($this->input->post()) {
-			$this->form_validation->set_rules($this->config->item('giftshop_product'));
-			$this->form_validation->set_error_delimiters('', '');
+		if ($this->input->post()) {$this->form_validation->set_rules($this->config->item('giftshop_product'));$this->form_validation->set_error_delimiters('', '');
 
 			if ($this->form_validation->run() === TRUE) {
-				$sku = $this->input->post('sku', TRUE);
-				$status = $this->input->post('status', TRUE);
+				$sku =$this->input->post('sku', TRUE);
+				$status =$this->input->post('status', TRUE);
 
 				if ($sku && $this->Product_model->sku_exists($sku)) {
 					$this->session->set_flashdata('message', "Error: SKU '$sku' already exists!");
 					redirect('staff/inventory');
 				}
 
-				$upload = $this->_upload_product_image('product_' . time() . '_');
+				$upload =$this->_upload_product_image('product_' . time() . '_');
 
 				if ($upload['error'] !== NULL) {
-					$this->session->set_flashdata('message', $upload['error']);
+					$this->session->set_flashdata('message',$upload['error']);
 					redirect('staff/inventory');
 				}
 
@@ -101,17 +96,56 @@ class StaffController extends CI_Controller {
 					'size' => $this->input->post('size', TRUE),
 					'color' => $this->input->post('color', TRUE),
 					'status' => $status,
-					'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int) $this->input->post('low_stock_threshold', TRUE) : 10,
-					'image_url' => $upload['image_url']
+					'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int) $this->input->post('low_stock_threshold', TRUE) : 10, 					'image_url' =>$upload['image_url']
 				);
 
-				$this->Product_model->add($product);
-				$this->session->set_flashdata('message', 'Product Added Successfully!');
+				$this->Product_model->add($product);$this->session->set_flashdata('message', 'Product Added Successfully!');
 				redirect('staff/inventory');
 			}
 
 			$this->session->set_flashdata('message', validation_errors() ?: 'Please correct the highlighted fields.');
 			redirect('staff/inventory');
+		}
+
+		redirect('staff/inventory');
+	}
+
+	/**
+	 * Processes a Stock In request submitted from the inventory stock modal.
+	 * Validates product selection and quantity before adding stock.
+	 *
+	 * @return void
+	 */
+	public function process_stock_in()
+	{
+		if ($this->input->post()) {
+			$product_id   = (int)$this->input->post('product_id', TRUE);
+			$quantity     = (int)$this->input->post('quantity', TRUE);
+			$reference_no =$this->input->post('reference_no', TRUE);
+			$supplier     =$this->input->post('supplier', TRUE);
+			$notes        = $this->input->post('notes', TRUE);
+			$user_id      =$this->session->userdata('user_id');
+
+			if ($product_id <= 0 || $quantity <= 0) {$this->session->set_flashdata('error', 'Please select a valid product and enter a positive quantity.');
+				redirect('staff/inventory');
+			}
+
+			$product = $this->Product_model->get_by_id($product_id, FALSE);
+			if ( ! $product) {$this->session->set_flashdata('error', 'Selected product was not found.');
+				redirect('staff/inventory');
+			}
+
+			$success =$this->Product_model->process_stock_in(
+				$product_id,$quantity, 
+				$reference_no,$supplier, 
+				$notes, 
+				$user_id
+			);
+
+			if ($success) {$this->session->set_flashdata('success', "Successfully added {$quantity} unit(s) to <strong>" . html_escape($product['name']) . "</strong>.");
+			} else {
+				$this->session->set_flashdata('error', 'Failed to update stock quantity. Please try again.');
+			}
 		}
 
 		redirect('staff/inventory');
@@ -130,7 +164,7 @@ class StaffController extends CI_Controller {
 	 */
 	public function edit_product($id)
 	{
-		$product = $this->Product_model->get_by_id((int) $id, FALSE);
+		$product = $this->Product_model->get_by_id((int)$id, FALSE);
 
 		if ( ! $product) {
 			show_error('Product not found.');
@@ -139,13 +173,12 @@ class StaffController extends CI_Controller {
 		if ($this->input->post('update')) {
 			$this->form_validation->set_rules($this->config->item('giftshop_product'));
 
-			if ($this->form_validation->run() === FALSE) {
-				$this->session->set_flashdata('message', validation_errors() ?: 'Please correct the highlighted fields.');
+			if ($this->form_validation->run() === FALSE) {$this->session->set_flashdata('message', validation_errors() ?: 'Please correct the highlighted fields.');
 				redirect('staff/inventory');
 			}
 
-			$sku = $this->input->post('sku', TRUE);
-			if ($sku && $this->Product_model->sku_exists($sku, (int) $id)) {
+			$sku =$this->input->post('sku', TRUE);
+			if ($sku &&$this->Product_model->sku_exists($sku, (int)$id)) {
 				$this->session->set_flashdata('message', "Error: SKU '$sku' already exists!");
 				redirect('staff/inventory');
 			}
@@ -160,20 +193,19 @@ class StaffController extends CI_Controller {
 				'size' => $this->input->post('size', TRUE),
 				'color' => $this->input->post('color', TRUE),
 				'status' => $this->input->post('status', TRUE),
-				'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int) $this->input->post('low_stock_threshold', TRUE) : 10
+				'low_stock_threshold' => $this->input->post('low_stock_threshold', TRUE) !== '' ? (int)$this->input->post('low_stock_threshold', TRUE) : 10
 			);
 
-			$upload = $this->_upload_product_image('product_' . time() . '_');
+			$upload =$this->_upload_product_image('product_' . time() . '_');
 			if ($upload['error'] !== NULL) {
-				$this->session->set_flashdata('message', $upload['error']);
+				$this->session->set_flashdata('message',$upload['error']);
 				redirect('staff/inventory');
 			}
 			if ($upload['image_url'] !== '') {
-				$fields['image_url'] = $upload['image_url'];
+				$fields['image_url'] =$upload['image_url'];
 			}
 
-			$this->Product_model->update((int) $id, $fields);
-			$this->session->set_flashdata('message', 'Product Updated Successfully');
+			$this->Product_model->update((int)$id, $fields);$this->session->set_flashdata('message', 'Product Updated Successfully');
 			redirect('staff/inventory');
 		}
 
@@ -184,17 +216,16 @@ class StaffController extends CI_Controller {
 			'categories' => $this->Category_model->get_all()
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/edit_product', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/edit_product',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	// Deletes a product by id and flashes a confirmation for the inventory list.
 	// Unguarded beyond the constructor's staff check; no confirmation step.
 	public function delete_product($id)
 	{
-		$this->Product_model->delete((int) $id);
-		$this->session->set_flashdata('message', 'Product Deleted');
+		$this->Product_model->delete((int) $id);$this->session->set_flashdata('message', 'Product Deleted');
 		redirect('staff/inventory');
 	}
 
@@ -202,8 +233,7 @@ class StaffController extends CI_Controller {
 	// Also returns per-status counts so the view can render the filter tabs.
 	public function reservations($filter = 'all')
 	{
-		if ( ! in_array($filter, array_merge(array('all'), Reservation_model::STATUSES), TRUE)) {
-			$filter = 'all';
+		if ( ! in_array($filter, array_merge(array('all'), Reservation_model::STATUSES), TRUE)) {$filter = 'all';
 		}
 
 		$data = array(
@@ -215,16 +245,16 @@ class StaffController extends CI_Controller {
 			'res_message' => $this->session->flashdata('res_message')
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/reservations', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/reservations',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	// Read-only detail view of one reservation with its items and customer.
 	// Items are fetched separately so the header row is not repeated per line.
 	public function view_reservation($id)
 	{
-		$res = $this->Reservation_model->get_with_user((int) $id);
+		$res = $this->Reservation_model->get_with_user((int)$id);
 
 		if ( ! $res) {
 			show_error('Reservation not found.');
@@ -235,12 +265,12 @@ class StaffController extends CI_Controller {
 			'active' => 'reservations',
 			'res' => $res,
 			'id' => (int) $id,
-			'items' => $this->Reservation_model->get_items((int) $id)
+			'items' => $this->Reservation_model->get_items((int)$id)
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/view_reservation', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/view_reservation',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	/**
@@ -257,15 +287,14 @@ class StaffController extends CI_Controller {
 	public function edit_reservation($id)
 	{
 		if ($this->input->post('update_status')) {
-			$new_status = $this->input->post('new_status', TRUE);
+			$new_status =$this->input->post('new_status', TRUE);
 			if (in_array($new_status, Reservation_model::STATUSES, TRUE)) {
-				$this->Reservation_model->update_status((int) $id, $new_status);
-				$this->session->set_flashdata('res_message', 'Reservation status updated to <strong>' . ucfirst($new_status) . '</strong>.');
+				$this->Reservation_model->update_status((int)$id, $new_status);$this->session->set_flashdata('res_message', 'Reservation status updated to <strong>' . ucfirst($new_status) . '</strong>.');
 			}
 			redirect('staff/reservations');
 		}
 
-		$res = $this->Reservation_model->get_with_user((int) $id);
+		$res = $this->Reservation_model->get_with_user((int)$id);
 
 		if ( ! $res) {
 			show_error('Reservation not found.');
@@ -277,9 +306,9 @@ class StaffController extends CI_Controller {
 			'res' => $res
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/edit_reservation', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/edit_reservation',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	/**
@@ -293,8 +322,8 @@ class StaffController extends CI_Controller {
 	 */
 	public function reports()
 	{
-		$monthly = $this->Reservation_model->monthly(6);
-		$stock = $this->Reservation_model->stock_summary();
+		$monthly =$this->Reservation_model->monthly(6);
+		$stock =$this->Reservation_model->stock_summary();
 
 		$data = array(
 			'title' => 'Reports - Staff',
@@ -302,8 +331,7 @@ class StaffController extends CI_Controller {
 			'total_revenue' => $this->Reservation_model->total_revenue('completed'),
 			'pending_revenue' => $this->Reservation_model->total_revenue('pending'),
 			'total_res' => $this->Reservation_model->total_count(),
-			'top_products' => $this->Reservation_model->top_products(5),
-			'months' => $monthly['months'],
+			'top_products' => $this->Reservation_model->top_products(5), 			'months' =>$monthly['months'],
 			'monthly_counts' => $monthly['counts'],
 			'monthly_revenue' => $monthly['revenue'],
 			'stock_ok' => $stock['ok'],
@@ -311,9 +339,9 @@ class StaffController extends CI_Controller {
 			'stock_out' => $stock['out']
 		);
 
-		$this->load->view('templates/staff_header', $data);
-		$this->load->view('staff/reports', $data);
-		$this->load->view('templates/footer', $data);
+		$this->load->view('templates/staff_header',$data);
+		$this->load->view('staff/reports',$data);
+		$this->load->view('templates/footer',$data);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -349,12 +377,12 @@ class StaffController extends CI_Controller {
 			'upload_path' => $dir,
 			'allowed_types' => 'gif|jpg|jpeg|png|webp',
 			'max_size' => 5120,
-			'file_name' => $prefix . $original,
+			'file_name' => $prefix .$original,
 			'overwrite' => FALSE
 		));
 
 		if ($this->upload->do_upload('product_image')) {
-			$fdata = $this->upload->data();
+			$fdata =$this->upload->data();
 			return array('image_url' => 'product-images/' . $fdata['file_name'], 'error' => NULL);
 		}
 
