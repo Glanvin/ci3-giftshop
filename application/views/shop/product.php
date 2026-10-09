@@ -42,7 +42,7 @@
                 </div>
 
                 <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-danger btn-lg px-5">
-                    Log in to Reserve / Buy
+                    Sign in to Reserve / Buy
                 </a>
             </div>
         </div>

@@ -11,23 +11,13 @@
             <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
         </div>
         <h2>New Here?</h2>
-        <p>Create an account to reserve your university essentials.</p>
-        <button class="btn-outline-white" onclick="goToSignup()">CREATE ACCOUNT</button>
+        <p>Sign up to reserve your university essentials.</p>
+        <a href="<?php echo site_url('auth/signup'); ?>" class="btn-outline-white" onclick="return flipTo(this.href)">SIGN UP</a>
     </div>
 
     <div class="right-panel">
-        <div class="form-title">Log In</div>
+        <div class="form-title">Sign In</div>
         <div class="form-sub">Enter your credentials to continue</div>
-
-        <?php if (isset($register_ok) && $register_ok): ?>
-            <div class="error-box" style="background:#f1f8f1; color:#2e7d32; border-color:#2e7d32;">
-                <?php echo html_escape($register_ok); ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (isset($login_error)): ?>
-            <div class="error-box"><?php echo html_escape($login_error); ?></div>
-        <?php endif; ?>
 
         <?php echo form_open('auth/login'); ?>
             <div class="mb-3">
@@ -39,7 +29,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="••••••••">
+                <input type="password" name="password" class="form-control" placeholder="Password">
                 <span class="field-error"><?php echo form_error('password'); ?></span>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -49,7 +39,7 @@
                 </div>
                 <a href="#" class="text-danger small text-decoration-none">Forgot Password?</a>
             </div>
-            <button type="submit" class="btn-main">Log In</button>
+            <button type="submit" class="btn-main">Sign In</button>
         <?php echo form_close(); ?>
 
         <div class="demo-box">
@@ -65,4 +55,4 @@
 
 </div>
 
-<script src="<?php echo base_url('assets/js/login.js'); ?>"></script>
+<script src="<?php echo base_url('assets/js/auth.js'); ?>"></script>

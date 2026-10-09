@@ -10,3 +10,4 @@
     <link rel="stylesheet" href="<?php echo base_url('assets/css/style.css'); ?>">
 </head>
 <body class="area-auth">
+<?php $this->load->view('templates/notifications'); ?>

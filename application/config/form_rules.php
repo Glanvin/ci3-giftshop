@@ -27,10 +27,10 @@ $config['giftshop_signup'] = array(
 	array(
 		'field' => 'full_name',
 		'label' => 'Full Name',
-		'rules' => 'required|trim|regex_match[/^[a-zA-Z\s]+$/]',
+		'rules' => 'required|trim|regex_match[/^[a-zA-Z\s\-]+$/]',
 		'errors' => array(
 			'required' => 'Full name is required.',
-			'regex_match' => 'Letters and spaces only.'
+			'regex_match' => 'Letters, spaces and dashes only.'
 		)
 	),
 	array(
@@ -68,11 +68,6 @@ $config['giftshop_signup'] = array(
 		'errors' => array(
 			'regex_match' => 'Numbers only.'
 		)
-	),
-	array(
-		'field' => 'role',
-		'label' => 'Account Type',
-		'rules' => 'required|in_list[student,staff]'
 	),
 	array(
 		'field' => 'student_id',

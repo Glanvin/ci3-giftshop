@@ -30,8 +30,9 @@
             </div>
 
             <div class="d-flex gap-2">
-                <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-login btn-sm">Login</a>
+                <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-login btn-sm">Sign In</a>
                 <a href="<?php echo site_url('auth/signup'); ?>" class="btn btn-logins btn-sm">Sign Up</a>
             </div>
         </div>
     </nav>
+<?php $this->load->view('templates/notifications'); ?>

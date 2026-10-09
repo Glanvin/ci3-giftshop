@@ -11,17 +11,13 @@
             <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
         </div>
         <h2>Already a Member?</h2>
-        <p>Log in to manage your reservations and shop faster.</p>
-        <button class="btn-outline-white" onclick="goToLogin()">LOG IN</button>
+        <p>Sign in to manage your reservations and shop faster.</p>
+        <a href="<?php echo site_url('auth/login'); ?>" class="btn-outline-white" onclick="return flipTo(this.href)">SIGN IN</a>
     </div>
 
     <div class="right-panel">
-        <div class="form-title">Create Account</div>
+        <div class="form-title">Sign Up</div>
         <div class="form-sub">Fill in your details below</div>
-
-        <?php if (isset($db_error)): ?>
-            <div class="error-box"><?php echo html_escape($db_error); ?></div>
-        <?php endif; ?>
 
         <?php echo form_open('auth/signup'); ?>
             <div class="mb-3">
@@ -39,15 +35,15 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="••••••••">
+                <input type="password" name="password" class="form-control" placeholder="Password">
                 <span class="field-error"><?php echo form_error('password'); ?></span>
             </div>
             <div class="mb-3">
                 <label class="form-label">Confirm Password</label>
-                <input type="password" name="confirm_password" class="form-control" placeholder="••••••••">
+                <input type="password" name="confirm_password" class="form-control" placeholder="Password Confirm">
                 <span class="field-error"><?php echo form_error('confirm_password'); ?></span>
             </div>
-            <button type="submit" class="btn-main">Create Account</button>
+            <button type="submit" class="btn-main">Sign Up</button>
         <?php echo form_close(); ?>
 
         <div class="text-center mt-3">
@@ -57,4 +53,4 @@
 
 </div>
 
-<script src="<?php echo base_url('assets/js/signup.js'); ?>"></script>
+<script src="<?php echo base_url('assets/js/auth.js'); ?>"></script>
