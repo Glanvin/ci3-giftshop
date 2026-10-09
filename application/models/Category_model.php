@@ -33,4 +33,37 @@ class Category_model extends CI_Model {
 	{
 		return self::STATIC_MAP;
 	}
+
+	/**
+	 * Inserts a new category into the database.
+	 * Automatically sets display_order to the next available position.
+	 *
+	 * @param  array $data Array containing category data
+	 * @return bool
+	 */
+
+	public function add($data)
+	{
+		if ( ! isset($data['display_order'])) {
+			$data['display_order'] = $this->get_next_order();
+		}
+
+		return $this->db->insert('categories', $data);
+	}
+	public function delete($id)
+    {
+        return $this->db->delete('categories', array('id' => (int) $id));
+    }
+
+	/**
+	 * Gets the next display_order integer so new categories append to the bottom.
+	 *
+	 * @return int
+	 */
+	private function get_next_order()
+	{
+		$this->db->select_max('display_order', 'max_order');
+		$query = $this->db->get('categories')->row();
+		return ($query && $query->max_order !== null) ? ((int) $query->max_order + 1) : 1;
+	}
 }
