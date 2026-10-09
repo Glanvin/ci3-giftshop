@@ -35,3 +35,4 @@
             </div>
         </div>
     </nav>
+<?php $this->load->view('templates/notifications'); ?>

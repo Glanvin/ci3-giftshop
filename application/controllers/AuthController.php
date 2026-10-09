@@ -54,19 +54,19 @@ class AuthController extends CI_Controller {
 		$this->form_validation->set_error_delimiters('', '');
 
 		$data = array(
-			'title' => 'Sign In - CU Giftshop',
-			'login_error' => NULL,
-			'register_ok' => $this->session->flashdata('register_ok')
+			'title' => 'Sign In - CU Giftshop'
 		);
 
-		if ($this->form_validation->run() === TRUE) {
+		$valid = $this->form_validation->run();
+
+		if ($valid === TRUE) {
 			$email = $this->input->post('email', TRUE);
 			$password = (string) $this->input->post('password', TRUE);
 
 			$user = $this->User_model->find_by_email($email);
 
 			if ( ! $user || (string) $user['password'] !== $password || $user['status'] !== 'active') {
-				$data['login_error'] = 'Wrong email or password. Please try again.';
+				set_notification('danger', 'Wrong email or password. Please try again.');
 			} else {
 				$this->session->set_userdata(array(
 					'user_id' => $user['id'],
@@ -85,6 +85,8 @@ class AuthController extends CI_Controller {
 
 				redirect($this->User_model->is_staff($user['role']) ? 'staff' : 'user');
 			}
+		} elseif ($this->input->method(TRUE) === 'POST') {
+			set_notification('danger', 'Please correct the highlighted fields.');
 		}
 
 		$this->load->view('templates/auth_header', $data);
@@ -122,7 +124,9 @@ class AuthController extends CI_Controller {
 			'selected_role' => $role
 		);
 
-		if ($this->form_validation->run() === TRUE) {
+		$valid = $this->form_validation->run();
+
+		if ($valid === TRUE) {
 			$is_staff = ($role === 'staff');
 
 			$new_user = array(
@@ -137,11 +141,13 @@ class AuthController extends CI_Controller {
 			);
 
 			if ($this->User_model->register($new_user)) {
-				$this->session->set_flashdata('register_ok', 'Account created successfully. You can now sign in.');
+				set_notification('success', 'Account created successfully. You can now sign in.');
 				redirect('auth/login');
 			} else {
-				$data['db_error'] = 'Something went wrong. Please try again.';
+				set_notification('danger', 'Something went wrong. Please try again.');
 			}
+		} elseif ($this->input->method(TRUE) === 'POST') {
+			set_notification('danger', 'Please correct the highlighted fields.');
 		}
 
 		$this->load->view('templates/auth_header', $data);

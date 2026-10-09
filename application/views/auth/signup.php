@@ -1,4 +1,4 @@
-<div class="flip-overlay" id="flipOverlay" data-redirect="<?php echo site_url('auth/login'); ?>">
+<div class="flip-overlay" id="flipOverlay">
     <div class="flip-coin">
         <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
     </div>
@@ -12,16 +12,12 @@
         </div>
         <h2>Already a Member?</h2>
         <p>Sign in to manage your reservations and shop faster.</p>
-        <button class="btn-outline-white" onclick="goToLogin()">SIGN IN</button>
+        <a href="<?php echo site_url('auth/login'); ?>" class="btn-outline-white" onclick="return flipTo(this.href)">SIGN IN</a>
     </div>
 
     <div class="right-panel">
         <div class="form-title">Sign Up</div>
         <div class="form-sub">Fill in your details below</div>
-
-        <?php if (isset($db_error)): ?>
-            <div class="error-box"><?php echo html_escape($db_error); ?></div>
-        <?php endif; ?>
 
         <?php echo form_open('auth/signup'); ?>
             <div class="mb-3">
@@ -57,4 +53,4 @@
 
 </div>
 
-<script src="<?php echo base_url('assets/js/signup.js'); ?>"></script>
+<script src="<?php echo base_url('assets/js/auth.js'); ?>"></script>

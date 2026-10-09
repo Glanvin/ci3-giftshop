@@ -85,5 +85,6 @@
 
     </div>
 </nav>
+<?php $this->load->view('templates/notifications'); ?>
 
 <script src="<?php echo base_url('assets/js/main.js'); ?>"></script>
