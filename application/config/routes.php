@@ -39,3 +39,12 @@ $route['staff/reservations'] = 'StaffController/reservations';
 $route['staff/reservation/edit/(:num)'] = 'StaffController/edit_reservation/$1';
 $route['staff/reservation/(:num)'] = 'StaffController/view_reservation/$1';
 $route['staff/reports'] = 'StaffController/reports';
+
+// Stock In Route
+$route['staff/process_stock_in'] = 'staffController/process_stock_in';
+
+// Product CRUD Routes
+$route['staff/inventory']        = 'staffController/inventory';
+$route['staff/product/add']      = 'staffController/add_product';
+$route['staff/product/edit/(:num)'] = 'staffController/edit_product/$1';
+$route['staff/product/delete/(:num)'] = 'staffController/delete_product/$1';
