@@ -650,6 +650,23 @@ body.area-auth {
     100% { transform: scale(0)   rotateY(360deg); opacity: 0; }
 }
 
+/* Floating global alerts: stacked above the nav, dropdowns and modals. */
+.notification-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    pointer-events: none;
+}
+
+.notification-area .alert {
+    pointer-events: auto;
+    max-width: 720px;
+    margin: 12px auto;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
 body.area-user {
     background: #faf9f6;
     font-family: 'Poppins', sans-serif;
