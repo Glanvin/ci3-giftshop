@@ -52,11 +52,11 @@
                             <a href="<?php echo site_url('user/product/' . (int) $product['id']); ?>" class="text-decoration-none">
                                 <h5 class="product-name"><?php echo html_escape($product['name']); ?></h5>
                             </a>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="product-meta">
                                 <span class="product-price">₱<?php echo number_format((float) $product['price'], 2); ?></span>
-                                <small class="text-muted"><?php echo html_escape($product['category_name']); ?></small>
+                                <small class="product-category text-muted"><?php echo html_escape($product['category_name']); ?></small>
                             </div>
-                            <?php echo form_open('cart/add', 'class="mt-auto pt-3"'); ?>
+                            <?php echo form_open('cart/add', 'class="pt-3"'); ?>
                                 <input type="hidden" name="product_id" value="<?php echo (int) $product['id']; ?>">
                                 <input type="hidden" name="quantity" value="1">
                                 <input type="hidden" name="redirect" value="browse">

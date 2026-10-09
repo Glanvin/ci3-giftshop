@@ -57,14 +57,14 @@
                 <div class="row g-4">
                     <?php foreach ($products as $product): ?>
                         <div class="col-md-4">
-                            <a href="<?php echo site_url('shop/product/' . (int) $product['id']); ?>" class="text-decoration-none">
+                            <a href="<?php echo site_url('shop/product/' . (int) $product['id']); ?>" class="text-decoration-none d-block h-100">
                                 <div class="card product-card h-100">
                                     <img src="<?php echo base_url(html_escape($product['image_url'])); ?>" alt="<?php echo html_escape($product['name']); ?>" class="card-img-top">
                                     <div class="card-body d-flex flex-column">
                                         <h5 class="product-name"><?php echo html_escape($product['name']); ?></h5>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
+                                        <div class="product-meta">
                                             <span class="product-price">₱<?php echo number_format((float) $product['price'], 2); ?></span>
-                                            <small class="text-muted"><?php echo html_escape($product['category_name']); ?></small>
+                                            <small class="product-category text-muted"><?php echo html_escape($product['category_name']); ?></small>
                                         </div>
                                     </div>
                                 </div>
