@@ -1,13 +1,24 @@
-<div class="container-lg py-5">
+<div class="container-lg py-5 px-4 px-md-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h3 class="fw-bold mb-1">Inventory</h3>
             <p class="text-muted mb-0">Manage all products in the giftshop</p>
         </div>
-        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addProductModal">
-            <i class="bi bi-plus-lg"></i> Add Product
-        </button>
+        <div class="d-flex flex-column align-items-end gap-2">
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="bi bi-folder-plus"></i> Add Category
+                </button>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <i class="bi bi-plus-lg"></i> Add Product
+                </button>
+            </div>
+            <!-- Positioned below Add Product on the right -->
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewCategoriesModal">
+                <i class="bi bi-list-ul me-1"></i> View All Categories
+            </button>
+        </div>
     </div>
 
     <?php if (isset($message)): ?>
@@ -170,5 +181,61 @@
                 </div>
             </div>
         <?php echo form_close(); ?>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <?php echo form_open('StaffController/add_category'); ?>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Product Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Category Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Uniforms, Textbooks, Merchandise" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Save Category</button>
+                </div>
+            </div>
+        <?php echo form_close(); ?>
+    </div>
+</div>
+
+<!-- View Categories Modal -->
+<div class="modal fade" id="viewCategoriesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Existing Categories</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <?php if (empty($categories)): ?>
+                        <li class="list-group-item text-muted text-center">No categories found.</li>
+                    <?php endif; ?>
+                    <?php foreach ($categories as $cat): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><b>#<?php echo (int)$cat['id']; ?></b> — <?php echo html_escape($cat['name']); ?></span>
+                            <?php echo form_open('StaffController/delete_category/' . (int)$cat['id'], 'style="display:inline;" onsubmit="return confirm(\'Delete this category?\');"'); ?>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            <?php echo form_close(); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>

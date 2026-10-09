@@ -1,96 +1,54 @@
-<div class="container-lg py-5">
+<div class="container-fluid bgcustom text-white text-center size p-5">
+    <h1 class="welcome">
+        <span class="welcome-top">Welcome to</span><br>
+        Capitol University <br>Official Giftshop
+    </h1>
+    <p class="fs-4 mt-3"> Your one-stop destination for textbooks, uniforms, and official university merchandise </p>
+    <div class="d-flex gap-4 mt-5 justify-content-center">
+        <a href="<?php echo site_url('shop/browse'); ?>" class="btn btn-danger btn-lg px-5">Shop now</a>
+        <a href="<?php echo site_url('user/reservations'); ?>"class="btn btn-logins btn-lg px-5 sizelogin">My Reservation</a>
+    </div>
+</div>
 
-    <!-- Welcome -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-                <h3 class="fw-bold mb-1">Welcome back, <?php echo html_escape($user_data['full_name']); ?>!</h3>
-                <p class="text-muted mb-0"><?php echo html_escape($user_data['email']); ?></p>
-            </div>
-            <div class="text-end">
-                <a href="<?php echo site_url('shop/browse'); ?>" class="btn btn-danger">
-                    <i class="bi bi-bag"></i> Shop Products
-                </a>
-            </div>
-        </div>
+<div class="shopcateg" style="padding-top: 60px; padding-bottom: 60px;">
+    <div class="text-center mb-5">
+        <p class="welcome category-title" style="color: #800000;">Total Person Development</p>
+        <hr class="w-50 mx-auto border-danger opacity-50">
+        <p class="fs-5">Browse our extensive collection of university essentials</p>
     </div>
 
-    <!-- Stats -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Total Reservations</h6>
-                    <h2 class="fw-bold"><?php echo (int) $stats['total']; ?></h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Active / In Progress</h6>
-                    <h2 class="fw-bold text-danger"><?php echo (int) $stats['active']; ?></h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Pending Payments</h6>
-                    <h2 class="fw-bold text-warning"><?php echo (int) $stats['pending']; ?></h2>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Carousel -->
+    <div id="demo" class="carousel slide" data-bs-ride="carousel">
 
-    <!-- Reservation History -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Reservation History</h5>
-            <a href="<?php echo site_url('user/reservations'); ?>" class="btn btn-sm btn-outline-danger">View All</a>
+        <!-- Indicators/dots -->
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#demo" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#demo" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#demo" data-bs-slide-to="2"></button>
+            <button type="button" data-bs-target="#demo" data-bs-slide-to="3"></button>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Reservation Code</th>
-                        <th>Date</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($history)): ?>
-                        <tr><td colspan="5" class="text-center text-muted py-4">No reservations yet.</td></tr>
-                    <?php endif; ?>
-                    <?php foreach ($history as $row): ?>
-                        <tr>
-                            <td><b><?php echo html_escape($row['reservation_code']); ?></b></td>
-                            <td><?php echo date('M d, Y', strtotime($row['created_at'])); ?></td>
-                            <td>₱<?php echo number_format((float) $row['total_amount'], 2); ?></td>
-                            <td>
-                                <?php
-                                    $status_badge = array(
-                                        'pending' => 'bg-warning text-dark',
-                                        'confirmed' => 'bg-info text-dark',
-                                        'ready' => 'bg-primary text-white',
-                                        'completed' => 'bg-success text-white',
-                                        'cancelled' => 'bg-secondary text-white'
-                                    );
-                                ?>
-                                <span class="badge <?php echo $status_badge[$row['status']] ?? 'bg-secondary'; ?>">
-                                    <?php echo ucfirst(html_escape($row['status'])); ?>
-                                </span>
-                            </td>
-                            <td class="text-end">
-                                <a href="<?php echo site_url('user/reservation/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-danger">View</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
 
+        <!-- The slideshow/carousel -->
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="<?php echo base_url('product-images/carousel1.jpg'); ?>" alt="Slide 1" class="d-block w-100">
+            </div>
+            <div class="carousel-item">
+                <img src="<?php echo base_url('product-images/carousel2.jpg'); ?>" alt="Slide 2" class="d-block w-100">
+            </div>
+            <div class="carousel-item">
+                <img src="<?php echo base_url('product-images/carousel3.jpg'); ?>" alt="Slide 3" class="d-block w-100">
+            </div>
+            <div class="carousel-item">
+                <img src="<?php echo base_url('product-images/carousel4.jpg'); ?>" alt="Slide 4" class="d-block w-100">
+            </div>
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#demo" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#demo" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
 </div>

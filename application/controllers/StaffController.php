@@ -69,6 +69,21 @@ class StaffController extends CI_Controller {
 	 *
 	 * @return void
 	 */
+	public function add_category()
+	{
+		$name = trim($this->input->post('name', TRUE));
+
+		if ( ! empty($name)) {
+			$data = array('name' => $name);
+			$this->Category_model->add($data);
+			$this->session->set_flashdata('message', 'Category Added Successfully!');
+		} else {
+			$this->session->set_flashdata('message', 'Error: Category name cannot be empty.');
+		}
+
+		redirect('staff/inventory');
+	}
+
 	public function add_product()
 	{
 		if ($this->input->post()) {
@@ -128,6 +143,15 @@ class StaffController extends CI_Controller {
 	 * @param  int    $id Product id from the URL.
 	 * @return void
 	 */
+	/**
+     * Deletes a category by ID.
+     */
+    public function delete_category($id)
+    {
+        $this->Category_model->delete((int) $id);
+        $this->session->set_flashdata('message', 'Category deleted successfully!');
+        redirect('staff/inventory');
+    }
 	public function edit_product($id)
 	{
 		$product = $this->Product_model->get_by_id((int) $id, FALSE);
