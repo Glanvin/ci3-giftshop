@@ -23,7 +23,7 @@ class Category_model extends CI_Model {
 	// Ordered by the display_order column the admin can maintain.
 	public function get_all()
 	{
-		$this->db->order_by('display_order', 'ASC');
+		$this->db->select('id, name, display_order')->order_by('display_order', 'ASC');
 		return $this->db->get('categories')->result_array();
 	}
 

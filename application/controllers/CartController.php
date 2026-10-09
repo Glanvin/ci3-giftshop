@@ -39,10 +39,18 @@ class CartController extends CI_Controller {
 	 */
 	public function index()
 	{
-		$items = array();
+		$cart = $this->cart->contents();
 
-		foreach ($this->cart->contents() as $item) {
-			$product = $this->Product_model->get_by_id((int) $item['id'], FALSE);
+		// One batch lookup for every cart line instead of a query per row.
+		$product_ids = array();
+		foreach ($cart as $item) {
+			$product_ids[] = (int) $item['id'];
+		}
+		$products = $this->Product_model->get_by_ids($product_ids);
+
+		$items = array();
+		foreach ($cart as $item) {
+			$product = isset($products[(int) $item['id']]) ? $products[(int) $item['id']] : NULL;
 
 			$items[] = array(
 				'rowid' => $item['rowid'],
