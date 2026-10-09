@@ -56,24 +56,32 @@ class StaffController extends CI_Controller {
 	 */
 	public function add_category()
 	{
-		if ($this->input->method(TRUE) !== 'POST') {
-			redirect('staff/inventory');
-		}
+	    $this->load->library('form_validation');
+	    $this->load->model('Category_model');
 
-		$this->form_validation->set_error_delimiters('', '');
-		$this->form_validation->set_rules($this->config->item('giftshop_category'));
+	    // Only validate that it is required and under max length
+	    $this->form_validation->set_rules('name', 'Category Name', 'trim|required|max_length[100]');
 
-		if ($this->form_validation->run() === FALSE) {
-			$this->_render_inventory('addCategoryModal');
-			return;
-		}
+	    if ($this->form_validation->run() === FALSE) {
+	        // Validation failed (e.g. empty input)
+	        $this->session->set_flashdata('error', validation_errors());
+	        redirect('staff/inventory');
+	        return;
+	    }
 
-		if ( ! $this->Category_model->add(array('name' => trim($this->input->post('name', TRUE))))) {
-			set_notification('danger', 'Could not save the category. Please try again.');
-		} else {
-			set_notification('success', 'Category added successfully.');
-		}
-		redirect('staff/inventory');
+	    $category_name = trim($this->input->post('name', TRUE));
+
+	    $query = $this->db->get_where('categories', array('name' => $category_name));
+
+	    if ($query->num_rows() > 0) {
+	        $this->session->set_flashdata('message', 'This category already exists.');
+	    } else {
+	        // Insert new category
+	        $this->Category_model->add(array('name' => $category_name));
+	        $this->session->set_flashdata('message', 'Category added successfully!');
+	    }
+
+	    redirect('staff/inventory');
 	}
 
 	public function add_product()
