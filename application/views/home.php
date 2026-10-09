@@ -12,7 +12,7 @@
 
     <div class="shopcateg" style="padding-top: 60px; padding-bottom: 60px;">
         <div class="text-center mb-5">
-            <h1 class="welcome category-title">Total Person Development</h1>
+            <p class="welcome category-title" style="color: #800000;">Total Person Development</p>
             <hr class="w-50 mx-auto border-danger opacity-50">
             <p class="fs-5">Browse our extensive collection of university essentials</p>
         </div>
