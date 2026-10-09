@@ -54,7 +54,7 @@ class AuthController extends CI_Controller {
 		$this->form_validation->set_error_delimiters('', '');
 
 		$data = array(
-			'title' => 'Login - CU Giftshop',
+			'title' => 'Sign In - CU Giftshop',
 			'login_error' => NULL,
 			'register_ok' => $this->session->flashdata('register_ok')
 		);
@@ -137,7 +137,7 @@ class AuthController extends CI_Controller {
 			);
 
 			if ($this->User_model->register($new_user)) {
-				$this->session->set_flashdata('register_ok', 'Account created successfully. You can now log in.');
+				$this->session->set_flashdata('register_ok', 'Account created successfully. You can now sign in.');
 				redirect('auth/login');
 			} else {
 				$data['db_error'] = 'Something went wrong. Please try again.';

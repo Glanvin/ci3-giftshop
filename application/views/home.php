@@ -6,7 +6,7 @@
         <p class="fs-4 mt-3"> Your one-stop destination for textbooks, uniforms, and official university merchandise </p>
         <div class="d-flex gap-4 mt-5 justify-content-center">
             <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-danger btn-lg px-5">Shop now</a>
-            <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-logins btn-lg px-5 sizelogin">Log In</a>
+            <a href="<?php echo site_url('auth/login'); ?>" class="btn btn-logins btn-lg px-5 sizelogin">Sign In</a>
         </div>
     </div>
 

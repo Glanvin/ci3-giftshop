@@ -11,12 +11,12 @@
             <img src="<?php echo base_url('product-images/culogo.jpg'); ?>" alt="CU Logo">
         </div>
         <h2>Already a Member?</h2>
-        <p>Log in to manage your reservations and shop faster.</p>
-        <button class="btn-outline-white" onclick="goToLogin()">LOG IN</button>
+        <p>Sign in to manage your reservations and shop faster.</p>
+        <button class="btn-outline-white" onclick="goToLogin()">SIGN IN</button>
     </div>
 
     <div class="right-panel">
-        <div class="form-title">Create Account</div>
+        <div class="form-title">Sign Up</div>
         <div class="form-sub">Fill in your details below</div>
 
         <?php if (isset($db_error)): ?>
@@ -47,7 +47,7 @@
                 <input type="password" name="confirm_password" class="form-control" placeholder="••••••••">
                 <span class="field-error"><?php echo form_error('confirm_password'); ?></span>
             </div>
-            <button type="submit" class="btn-main">Create Account</button>
+            <button type="submit" class="btn-main">Sign Up</button>
         <?php echo form_close(); ?>
 
         <div class="text-center mt-3">
