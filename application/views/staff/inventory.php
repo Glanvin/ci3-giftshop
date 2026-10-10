@@ -26,6 +26,9 @@
             <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewCategoriesModal">
                 Categories
             </button>
+            <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#inventoryHistoryModal">
+                History Log
+            </button>
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                 Add Product
             </button>
@@ -222,6 +225,47 @@
                         </li>
                     <?php endforeach; ?>
                 </ul>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inventoryHistoryModal" tabindex="-1" aria-labelledby="inventoryHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inventoryHistoryModalLabel">Inventory Activity History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Date</th><th>Product</th><th>Action</th><th>Change</th><th>Before</th><th>After</th><th>Reference</th><th>Supplier</th><th>Member / Staff</th><th>Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($inventory_logs)): ?>
+                                <tr><td colspan="10" class="text-center text-muted py-4">No inventory activity recorded yet.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($inventory_logs as $log): ?>
+                                    <tr>
+                                        <td class="text-nowrap"><?php echo ! empty($log['created_at']) ? html_escape(date('M d, Y H:i', strtotime($log['created_at']))) : '—'; ?></td>
+                                        <td><?php echo html_escape($log['product_name'] ?: 'Deleted product'); ?></td>
+                                        <td><?php echo html_escape(ucfirst(str_replace('_', ' ', $log['action']))); ?></td>
+                                        <td class="<?php echo (int) $log['quantity_change'] < 0 ? 'text-danger' : 'text-success'; ?>"><?php echo (int) $log['quantity_change'] > 0 ? '+' : ''; ?><?php echo (int) $log['quantity_change']; ?></td>
+                                        <td><?php echo (int) $log['previous_quantity']; ?></td>
+                                        <td><?php echo (int) $log['new_quantity']; ?></td>
+                                        <td><?php echo html_escape($log['reference_no'] ?: '—'); ?></td>
+                                        <td><?php echo html_escape($log['supplier'] ?: '—'); ?></td>
+                                        <td><?php echo html_escape($log['actor_name'] ?: 'Unknown user'); ?></td>
+                                        <td><?php echo html_escape($log['notes'] ?: '—'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
         </div>

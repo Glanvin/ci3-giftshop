@@ -247,7 +247,7 @@ class Product_model extends CI_Model {
 	}
 
 	/**
-	 * Atomic transaction helper: Increments product quantity and logs 
+	 * Atomic transaction helper: Increments product quantity and logs
 	 * the stock-in movement in the inventory log table.
 	 *
 	 * @param  int         $product_id
@@ -296,5 +296,23 @@ class Product_model extends CI_Model {
 			return FALSE;
 		}
 		return $this->db->trans_commit();
+	}
+
+	/** Return the most recent inventory movements with their product and actor. */
+	public function get_inventory_logs($limit = 100)
+	{
+		if ( ! $this->db->table_exists('inventory_logs')) {
+			return array();
+		}
+
+		return $this->db
+			->select('l.*, p.name AS product_name, u.full_name AS actor_name')
+			->from('inventory_logs l')
+			->join('products p', 'l.product_id = p.id', 'left')
+			->join('users u', 'l.user_id = u.id', 'left')
+			->order_by('l.created_at', 'DESC')
+			->limit(max(1, min(500, (int) $limit)))
+			->get()
+			->result_array();
 	}
 }

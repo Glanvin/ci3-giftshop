@@ -546,6 +546,7 @@ class StaffController extends CI_Controller {
 			'products' => $this->Product_model->get_by_filter($filter),
 			'counts' => $this->Product_model->get_counts(),
 			'categories' => $this->Category_model->get_all(),
+			'inventory_logs' => $this->Product_model->get_inventory_logs(100),
 			'message' => $this->session->flashdata('message'),
 			'open_modal' => $open_modal,
 			'upload_error' => $upload_error,
