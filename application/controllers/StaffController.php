@@ -5,22 +5,21 @@ class StaffController extends CI_Controller {
 
 	private $sku_exclude_id = NULL;
 
-	// Loads the models, upload library and rule set every staff action needs.
-	// Acts as the access control: non-staff roles are bounced to login.
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('User_model');$this->load->model('Product_model');
-		$this->load->model('Category_model');$this->load->model('Reservation_model');
-		$this->load->library('upload');$this->config->load('form_rules');
+		$this->load->model('User_model');
+		$this->load->model('Product_model');
+		$this->load->model('Category_model');
+		$this->load->model('Reservation_model');
+		$this->load->library('upload');
+		$this->config->load('form_rules');
 
 		if ( ! $this->User_model->is_staff($this->session->userdata('role'))) {
 			redirect('auth/login');
 		}
 	}
 
-	// Landing page for staff: total, pending and completed counts plus recent rows.
-	// Everything is precomputed in the model so the view only loops and formats.
 	public function dashboard()
 	{
 		$data = array(
@@ -32,19 +31,16 @@ class StaffController extends CI_Controller {
 			'recent' => $this->Reservation_model->get_recent(5)
 		);
 
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/dashboard',$data);
-		$this->load->view('templates/footer',$data);
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/dashboard', $data);
+		$this->load->view('templates/footer', $data);
 	}
 
-	// Product table for staff, filtered by the `filter` query string.
-	// The filter is whitelisted to active/low/out here, defaulting to all.
 	public function inventory()
 	{
 		$this->_render_inventory();
 	}
 
-	/** Return product matches for the inventory stock-in search field. */
 	public function search_stock_products()
 	{
 		if ($this->input->method(TRUE) !== 'GET') {
@@ -68,44 +64,30 @@ class StaffController extends CI_Controller {
 			->set_output(json_encode(array('results' => $results)));
 	}
 
-	/**
-	 * Creates a product from the inventory form.
-	 *
-	 * Runs the shared `giftshop_product` rule set, rejects a duplicate SKU
-	 * (via `sku_exists`), and saves the uploaded image before inserting.
-	 * Every failure path flashes a reason and redirects back to the
-	 * inventory list, so the view is never reached on a bad POST.
-	 *
-	 * @return void
-	 */
 	public function add_category()
 	{
-	    $this->load->library('form_validation');
-	    $this->load->model('Category_model');
+		$this->load->library('form_validation');
+		$this->load->model('Category_model');
 
-	    // Only validate that it is required and under max length
-	    $this->form_validation->set_rules('name', 'Category Name', 'trim|required|max_length[100]');
+		$this->form_validation->set_rules('name', 'Category Name', 'trim|required|max_length[100]');
 
-	    if ($this->form_validation->run() === FALSE) {
-	        // Validation failed (e.g. empty input)
-	        $this->session->set_flashdata('error', validation_errors());
-	        redirect('staff/inventory');
-	        return;
-	    }
+		if ($this->form_validation->run() === FALSE) {
+			$this->session->set_flashdata('error', validation_errors());
+			redirect('staff/inventory');
+			return;
+		}
 
-	    $category_name = trim($this->input->post('name', TRUE));
+		$category_name = trim($this->input->post('name', TRUE));
+		$query = $this->db->get_where('categories', array('name' => $category_name));
 
-	    $query = $this->db->get_where('categories', array('name' => $category_name));
+		if ($query->num_rows() > 0) {
+			$this->session->set_flashdata('message', 'This category already exists.');
+		} else {
+			$this->Category_model->add(array('name' => $category_name));
+			$this->session->set_flashdata('message', 'Category added successfully!');
+		}
 
-	    if ($query->num_rows() > 0) {
-	        $this->session->set_flashdata('message', 'This category already exists.');
-	    } else {
-	        // Insert new category
-	        $this->Category_model->add(array('name' => $category_name));
-	        $this->session->set_flashdata('message', 'Category added successfully!');
-	    }
-
-	    redirect('staff/inventory');
+		redirect('staff/inventory');
 	}
 
 	public function add_product()
@@ -141,7 +123,9 @@ class StaffController extends CI_Controller {
 			'image_url' => $upload['image_url']
 		);
 
-		if ($this->Product_model->add($product)) {
+		// Pass current user ID for audit logging
+		$product_id = $this->Product_model->add($product, $this->session->userdata('user_id'));
+		if ($product_id) {
 			set_notification('success', 'Product added successfully.');
 		} else {
 			set_notification('danger', 'Could not save the product. Please try again.');
@@ -149,12 +133,6 @@ class StaffController extends CI_Controller {
 		redirect('staff/inventory');
 	}
 
-	/**
-	 * Processes a Stock In request submitted from the inventory stock modal.
-	 * Validates product selection and quantity before adding stock.
-	 *
-	 * @return void
-	 */
 	public function process_stock_in()
 	{
 		if ($this->input->method(TRUE) !== 'POST') {
@@ -188,33 +166,20 @@ class StaffController extends CI_Controller {
 		redirect('staff/inventory');
 	}
 
-	/**
-	 * Renders the edit form for a product and applies the update POST.
-	 *
-	 * A missing id is a hard 404 via `show_error`. On submit the same
-	 * rule set runs, the SKU check excludes this product's own id, and a
-	 * new image is optional: `image_url` is only overwritten when an
-	 * upload actually succeeded, otherwise the existing path is kept.
-	 *
-	 * @param  int    $id Product id from the URL.
-	 * @return void
-	 */
-	/**
-     * Deletes a category by ID.
-     */
-    public function delete_category($id)
-    {
-        if ($this->input->method(TRUE) !== 'POST') {
-            redirect('staff/inventory');
-        }
+	public function delete_category($id)
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			redirect('staff/inventory');
+		}
 
-        if ($this->Category_model->delete((int) $id)) {
-            set_notification('success', 'Category deleted successfully.');
-        } else {
-            set_notification('danger', 'Could not delete the category. Remove its products first.');
-        }
-        redirect('staff/inventory');
-    }
+		if ($this->Category_model->delete((int) $id)) {
+			set_notification('success', 'Category deleted successfully.');
+		} else {
+			set_notification('danger', 'Could not delete the category. Remove its products first.');
+		}
+		redirect('staff/inventory');
+	}
+
 	public function edit_product($id)
 	{
 		$this->load->helper('pricing');
@@ -308,15 +273,14 @@ class StaffController extends CI_Controller {
 		$this->load->view('templates/footer', $data);
 	}
 
-	// Deletes a product by id and flashes a confirmation for the inventory list.
-	// Unguarded beyond the constructor's staff check; no confirmation step.
 	public function delete_product($id)
 	{
 		if ($this->input->method(TRUE) !== 'POST') {
 			redirect('staff/inventory');
 		}
 
-		if ($this->Product_model->delete((int) $id)) {
+		// Pass user ID for tracking deletions
+		if ($this->Product_model->delete((int) $id, $this->session->userdata('user_id'))) {
 			set_notification('success', 'Product deleted.');
 		} else {
 			set_notification('danger', 'Could not delete the product.');
@@ -324,11 +288,10 @@ class StaffController extends CI_Controller {
 		redirect('staff/inventory');
 	}
 
-	// Reservation queue for staff, filtered by status via the URL segment.
-	// Also returns per-status counts so the view can render the filter tabs.
 	public function reservations($filter = 'all')
 	{
-		if ( ! in_array($filter, array_merge(array('all'), Reservation_model::STATUSES), TRUE)) {$filter = 'all';
+		if ( ! in_array($filter, array_merge(array('all'), Reservation_model::STATUSES), TRUE)) {
+			$filter = 'all';
 		}
 
 		$data = array(
@@ -340,13 +303,11 @@ class StaffController extends CI_Controller {
 			'res_message' => $this->session->flashdata('res_message')
 		);
 
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/reservations',$data);
-		$this->load->view('templates/footer',$data);
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/reservations', $data);
+		$this->load->view('templates/footer', $data);
 	}
 
-	// Read-only detail view of one reservation with its items and customer.
-	// Items are fetched separately so the header row is not repeated per line.
 	public function view_reservation($id)
 	{
 		$res = $this->Reservation_model->get_with_user((int)$id);
@@ -363,22 +324,11 @@ class StaffController extends CI_Controller {
 			'items' => $this->Reservation_model->get_items((int)$id)
 		);
 
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/view_reservation',$data);
-		$this->load->view('templates/footer',$data);
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/view_reservation', $data);
+		$this->load->view('templates/footer', $data);
 	}
 
-	/**
-	 * Applies a status change posted from the reservation edit screen.
-	 *
-	 * The new status is checked against `Reservation_model::STATUSES`
-	 * before it is written, and the resulting message is HTML so the view
-	 * can bold the new status. Runs before the record is loaded, since a
-	 * redirect always follows a valid transition.
-	 *
-	 * @param  int $id Reservation id from the URL.
-	 * @return void
-	 */
 	public function edit_reservation($id)
 	{
 		if ($this->input->post('update_status')) {
@@ -405,24 +355,15 @@ class StaffController extends CI_Controller {
 			'res' => $res
 		);
 
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/edit_reservation',$data);
-		$this->load->view('templates/footer',$data);
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/edit_reservation', $data);
+		$this->load->view('templates/footer', $data);
 	}
 
-	/**
-	 * Renders the staff reports page: revenue, trends and stock levels.
-	 *
-	 * Pulls six months of reservation history and a stock summary, then
-	 * splits the monthly rows into separate month/count/revenue series so
-	 * the chart view does not have to reshape them.
-	 *
-	 * @return void
-	 */
 	public function reports()
 	{
-		$monthly =$this->Reservation_model->monthly(6);
-		$stock =$this->Reservation_model->stock_summary();
+		$monthly = $this->Reservation_model->monthly(6);
+		$stock = $this->Reservation_model->stock_summary();
 
 		$data = array(
 			'title' => 'Reports - Staff',
@@ -430,7 +371,8 @@ class StaffController extends CI_Controller {
 			'total_revenue' => $this->Reservation_model->total_revenue('completed'),
 			'pending_revenue' => $this->Reservation_model->total_revenue('pending'),
 			'total_res' => $this->Reservation_model->total_count(),
-			'top_products' => $this->Reservation_model->top_products(5), 			'months' =>$monthly['months'],
+			'top_products' => $this->Reservation_model->top_products(5),
+			'months' => $monthly['months'],
 			'monthly_counts' => $monthly['counts'],
 			'monthly_revenue' => $monthly['revenue'],
 			'stock_ok' => $stock['ok'],
@@ -438,14 +380,10 @@ class StaffController extends CI_Controller {
 			'stock_out' => $stock['out']
 		);
 
-		$this->load->view('templates/staff_header',$data);
-		$this->load->view('staff/reports',$data);
-		$this->load->view('templates/footer',$data);
+		$this->load->view('templates/staff_header', $data);
+		$this->load->view('staff/reports', $data);
+		$this->load->view('templates/footer', $data);
 	}
-
-	/* ------------------------------------------------------------------ */
-	/*  Helpers                                                            */
-	/* ------------------------------------------------------------------ */
 
 	public function callback_category_exists($category_id)
 	{
@@ -497,6 +435,7 @@ class StaffController extends CI_Controller {
 			'products' => $this->Product_model->get_by_filter($filter),
 			'counts' => $this->Product_model->get_counts(),
 			'categories' => $this->Category_model->get_all(),
+			'inventory_logs' => $this->Product_model->get_inventory_logs(100), // <-- Added logs array
 			'message' => $this->session->flashdata('message'),
 			'open_modal' => $open_modal,
 			'upload_error' => $upload_error,
@@ -508,18 +447,6 @@ class StaffController extends CI_Controller {
 		$this->load->view('templates/footer', $data);
 	}
 
-	/**
-	 * Saves `product_image` into `uploads/products/` and returns its path.
-	 *
-	 * Never fails hard: a missing upload returns an empty path with a NULL
-	 * error so callers can treat the image as optional. The directory is
-	 * created on demand, the original name is sanitised to
-	 * `[a-zA-Z0-9._-]` and prefixed to avoid collisions, and anything the
-	 * Upload library rejects comes back as a stripped error string.
-	 *
-	 * @param  string $prefix Filename prefix, normally `product_<time>_`.
-	 * @return array  ['image_url' => string, 'error' => string|NULL]
-	 */
 	private function _upload_product_image($prefix)
 	{
 		if (empty($_FILES['product_image']['name'])) {
@@ -539,12 +466,12 @@ class StaffController extends CI_Controller {
 			'upload_path' => $dir,
 			'allowed_types' => 'gif|jpg|jpeg|png|webp',
 			'max_size' => 5120,
-			'file_name' => $prefix .$original,
+			'file_name' => $prefix . $original,
 			'overwrite' => FALSE
 		));
 
 		if ($this->upload->do_upload('product_image')) {
-			$fdata =$this->upload->data();
+			$fdata = $this->upload->data();
 			return array('image_url' => 'uploads/products/' . $fdata['file_name'], 'error' => NULL);
 		}
 
