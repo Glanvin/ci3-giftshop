@@ -1,12 +1,13 @@
 <?php
-    $active_modal = isset($open_modal) ? $open_modal : '';$modal_value = function ($modal_id,$field, $default = '') use ($active_modal) {
-        return $active_modal === $modal_id ? set_value($field, $default) :$default;
+    $active_modal = isset($open_modal) ? $open_modal : '';
+    $modal_value = function ($modal_id, $field, $default = '') use ($active_modal) {
+        return $active_modal === $modal_id ? set_value($field, $default) : $default;
     };
     $modal_error = function ($modal_id, $field) use ($active_modal) {
         return $active_modal === $modal_id ? form_error($field, '<small class="text-danger d-block">', '</small>') : '';
     };
-    $modal_select = function ($modal_id,$field, $value) use ($active_modal) {
-        return $active_modal ===$modal_id ? set_select($field,$value) : '';
+    $modal_select = function ($modal_id, $field, $value) use ($active_modal) {
+        return $active_modal === $modal_id ? set_select($field, $value) : '';
     };
 ?>
 <div class="container-lg py-5">
@@ -25,9 +26,8 @@
             <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewCategoriesModal">
                 Categories
             </button>
-            <!-- History Log Button Added Here -->
             <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#inventoryHistoryModal">
-                 History Log
+                History Log
             </button>
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                 Add Product
@@ -43,16 +43,16 @@
     <div class="d-flex flex-wrap gap-2 mb-4">
         <?php 
             $filter_config = array(
-                'all'    => array('label' => 'All',          'active_class' => 'btn-dark',                  'inactive_class' => 'btn-outline-dark'),
+                'all'    => array('label' => 'All',          'active_class' => 'btn-dark',                 'inactive_class' => 'btn-outline-dark'),
                 'active' => array('label' => 'Active',       'active_class' => 'btn-success text-white',   'inactive_class' => 'btn-outline-success'),
                 'low'    => array('label' => 'Low Stock',    'active_class' => 'btn-warning text-dark',    'inactive_class' => 'btn-outline-warning'),
                 'out'    => array('label' => 'Out of Stock', 'active_class' => 'btn-danger text-white',    'inactive_class' => 'btn-outline-danger')
             );
         ?>
-        <?php foreach ($filter_config as $key =>$cfg): ?>
+        <?php foreach ($filter_config as $key => $cfg): ?>
             <?php 
-                $is_selected = ($filter ===$key);
-                $btn_class   =$is_selected ? $cfg['active_class'] . ' fw-bold' :$cfg['inactive_class'];
+                $is_selected = ($filter === $key);
+                $btn_class   = $is_selected ? $cfg['active_class'] . ' fw-bold' : $cfg['inactive_class'];
             ?>
             <a href="<?php echo site_url('staff/inventory?filter=' . $key); ?>"
                class="btn btn-sm <?php echo $btn_class; ?>">
@@ -71,18 +71,22 @@
                     <?php if (empty($products)): ?>
                         <tr><td colspan="8" class="text-center text-muted py-5">No products found.</td></tr>
                     <?php endif; ?>
-                    <?php foreach ($products as$product): ?>
+                    <?php foreach ($products as $product): ?>
                         <?php
                             if ($product['stock_quantity'] <= 0) {
-                                $stock_state = 'Out of Stock';$badge_class = 'bg-danger text-white';
-                            } elseif ($product['stock_quantity'] <=$product['low_stock_threshold']) {
-                                $stock_state = 'Low Stock';$badge_class = 'bg-warning text-dark';
+                                $stock_state = 'Out of Stock';
+                                $badge_class = 'bg-danger text-white';
+                            } elseif ($product['stock_quantity'] <= $product['low_stock_threshold']) {
+                                $stock_state = 'Low Stock';
+                                $badge_class = 'bg-warning text-dark';
                             } else {
                                 $raw_status = strtolower($product['status']);
                                 if ($raw_status === 'active') {
-                                    $stock_state = 'Active';$badge_class = 'bg-success text-white';
+                                    $stock_state = 'Active';
+                                    $badge_class = 'bg-success text-white';
                                 } else {
-                                    $stock_state = ucfirst(str_replace('_', ' ', $product['status']));$badge_class = 'bg-secondary text-white';
+                                    $stock_state = ucfirst(str_replace('_', ' ', $product['status']));
+                                    $badge_class = 'bg-secondary text-white';
                                 }
                             }
                         ?>
@@ -115,7 +119,7 @@
     </div>
 </div>
 
-<!-- add product modal -->
+<!-- add product -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <?php echo form_open_multipart('staff/product/add'); ?>
@@ -125,15 +129,33 @@
                     <div class="row g-3">
                         <div class="col-md-6"><label class="form-label" for="new-product-name">Product Name</label><input id="new-product-name" type="text" name="name" class="form-control" value="<?php echo $modal_value('addProductModal', 'name'); ?>"><?php echo $modal_error('addProductModal', 'name'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-sku">SKU</label><input id="new-product-sku" type="text" name="sku" class="form-control" value="<?php echo $modal_value('addProductModal', 'sku'); ?>"><?php echo $modal_error('addProductModal', 'sku'); ?></div>
-                        <div class="col-md-6"><label class="form-label" for="new-product-category">Category</label><select id="new-product-category" name="category_id" class="form-select"><option value="">Select category</option><?php foreach ($categories as$category): ?><option value="<?php echo (int) $category['id']; ?>" <?php echo $modal_select('addProductModal', 'category_id',$category['id']); ?>><?php echo html_escape($category['name']); ?></option><?php endforeach; ?></select><?php echo$modal_error('addProductModal', 'category_id'); ?></div>
-                        <div class="col-md-6"><label class="form-label" for="new-product-price">Price</label><input id="new-product-price" type="number" name="price" class="form-control" min="0" max="99999999.99" step="0.01" value="<?php echo $modal_value('addProductModal', 'price'); ?>"><?php echo $modal_error('addProductModal', 'price'); ?></div>
+                        <div class="col-md-6"><label class="form-label" for="new-product-category">Category</label><select id="new-product-category" name="category_id" class="form-select"><option value="">Select category</option><?php foreach ($categories as $category): ?><option value="<?php echo (int) $category['id']; ?>" <?php echo $modal_select('addProductModal', 'category_id', $category['id']); ?>><?php echo html_escape($category['name']); ?></option><?php endforeach; ?></select><?php echo $modal_error('addProductModal', 'category_id'); ?></div>
+                        <div class="col-md-6"><label class="form-label" for="product-price">Base Price (₱)</label><input id="product-price" type="number" name="price" class="form-control" min="0" max="99999999.99" step="0.01" value="<?php echo $modal_value('addProductModal', 'price'); ?>"><?php echo $modal_error('addProductModal', 'price'); ?></div>
+                        <div class="col-md-6">
+                            <label for="product-markup" class="form-label">Markup (%)</label>
+                            <input type="number" id="product-markup" name="markup_percent" class="form-control" step="0.01" min="0" max="99999999.99" value="<?php echo $modal_value('addProductModal', 'markup_percent', '0'); ?>" aria-describedby="markup-help">
+                            <?php echo $modal_error('addProductModal', 'markup_percent'); ?>
+                            <small id="markup-help" class="text-muted d-block">Applied once when saved. Reopening starts from the saved price with 0% markup.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="selling-price-preview" class="form-label">Selling Price After Markup</label>
+                            <?php
+                                $preview_price = giftshop_price_with_markup(
+                                    set_value('price', '', FALSE),
+                                    set_value('markup_percent', '0', FALSE) ?: '0'
+                                );
+                            ?>
+                            <output id="selling-price-preview" for="product-price product-markup" class="d-block fs-4 fw-bold text-danger" aria-live="polite"><?php echo $preview_price !== NULL ? '₱' . number_format((float) $preview_price, 2) : 'Enter a valid price and markup.'; ?></output>
+                            <small class="text-muted d-block">This is the price customers will see after saving.</small>
+                            <noscript><small class="text-muted d-block">Add Product calculates the total. Enable JavaScript for a live preview.</small></noscript>
+                        </div>
                         <div class="col-md-6"><label class="form-label" for="new-product-stock">Stock Quantity</label><input id="new-product-stock" type="number" name="stock_quantity" class="form-control" min="0" step="1" value="<?php echo $modal_value('addProductModal', 'stock_quantity', '0'); ?>"><?php echo $modal_error('addProductModal', 'stock_quantity'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-threshold">Low Stock Threshold</label><input id="new-product-threshold" type="number" name="low_stock_threshold" class="form-control" min="0" step="1" value="<?php echo $modal_value('addProductModal', 'low_stock_threshold', '10'); ?>"><?php echo $modal_error('addProductModal', 'low_stock_threshold'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-size">Size</label><input id="new-product-size" type="text" name="size" class="form-control" value="<?php echo $modal_value('addProductModal', 'size'); ?>"><?php echo $modal_error('addProductModal', 'size'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-color">Color</label><input id="new-product-color" type="text" name="color" class="form-control" value="<?php echo $modal_value('addProductModal', 'color'); ?>"><?php echo $modal_error('addProductModal', 'color'); ?></div>
-                        <div class="col-md-6"><label class="form-label" for="new-product-status">Status</label><select id="new-product-status" name="status" class="form-select"><option value="active" <?php echo $modal_select('addProductModal', 'status', 'active'); ?>>Active</option><option value="inactive" <?php echo $modal_select('addProductModal', 'status', 'inactive'); ?>>Inactive</option><option value="out_of_stock" <?php echo $modal_select('addProductModal', 'status', 'out_of_stock'); ?>>Out of Stock</option></select><?php echo$modal_error('addProductModal', 'status'); ?></div>
+                        <div class="col-md-6"><label class="form-label" for="new-product-status">Status</label><select id="new-product-status" name="status" class="form-select"><option value="active" <?php echo $modal_select('addProductModal', 'status', 'active'); ?>>Active</option><option value="inactive" <?php echo $modal_select('addProductModal', 'status', 'inactive'); ?>>Inactive</option><option value="out_of_stock" <?php echo $modal_select('addProductModal', 'status', 'out_of_stock'); ?>>Out of Stock</option></select><?php echo $modal_error('addProductModal', 'status'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-image">Product Image</label><input id="new-product-image" type="file" name="product_image" class="form-control" accept="image/*"><?php if ($active_modal === 'addProductModal' && ! empty($upload_error)): ?><small class="text-danger d-block"><?php echo html_escape($upload_error); ?></small><?php endif; ?><small class="text-muted">JPG, PNG, GIF or WebP, max 5MB.</small></div>
-                        <div class="col-12"><label class="form-label" for="new-product-description">Description</label><textarea id="new-product-description" name="description" class="form-control" rows="3"><?php echo $modal_value('addProductModal', 'description'); ?></textarea><?php echo$modal_error('addProductModal', 'description'); ?></div>
+                        <div class="col-12"><label class="form-label" for="new-product-description">Description</label><textarea id="new-product-description" name="description" class="form-control" rows="3"><?php echo $modal_value('addProductModal', 'description'); ?></textarea><?php echo $modal_error('addProductModal', 'description'); ?></div>
                     </div>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Add Product</button></div>
@@ -142,7 +164,7 @@
     </div>
 </div>
 
-<!-- add category modal -->
+<!-- add category -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <?php echo form_open('StaffController/add_category'); ?>
@@ -155,7 +177,7 @@
     </div>
 </div>
 
-<!-- stock in modal -->
+<!-- stockin -->
 <div class="modal fade" id="stockInModal" tabindex="-1" aria-labelledby="stockInModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <?php echo form_open('staff/process_stock_in'); ?>
@@ -166,7 +188,7 @@
                         <label class="form-label" for="stock-in-search">Search Product</label>
                         <div class="position-relative">
                             <input type="search" id="stock-in-search" class="form-control" autocomplete="off" placeholder="Type a product name or SKU" role="combobox" aria-autocomplete="list" aria-controls="stock-in-product-results" aria-expanded="false" value="<?php echo isset($selected_stock_product['name']) ? html_escape($selected_stock_product['name']) : ''; ?>">
-                            <input type="hidden" id="stock-in-product" name="product_id" value="<?php echo isset($selected_stock_product['id']) ? (int)$selected_stock_product['id'] : ''; ?>">
+                            <input type="hidden" id="stock-in-product" name="product_id" value="<?php echo isset($selected_stock_product['id']) ? (int) $selected_stock_product['id'] : ''; ?>">
                             <div id="stock-in-product-results" class="list-group stock-product-results" role="listbox" hidden></div>
                         </div>
                         <div id="stock-in-search-status" class="form-text" role="status" aria-live="polite">Search by product name or SKU. Results appear after a short pause.</div>
@@ -175,7 +197,7 @@
                     <div class="mb-3"><label class="form-label" for="stock-in-quantity">Quantity</label><input id="stock-in-quantity" type="number" name="quantity" class="form-control" min="1" step="1" value="<?php echo $modal_value('stockInModal', 'quantity'); ?>"><?php echo $modal_error('stockInModal', 'quantity'); ?></div>
                     <div class="mb-3"><label class="form-label" for="stock-in-reference">PO / Delivery Receipt # <span class="text-muted">(optional)</span></label><input id="stock-in-reference" type="text" name="reference_no" class="form-control" value="<?php echo $modal_value('stockInModal', 'reference_no'); ?>"><?php echo $modal_error('stockInModal', 'reference_no'); ?></div>
                     <div class="mb-3"><label class="form-label" for="stock-in-supplier">Supplier <span class="text-muted">(optional)</span></label><input id="stock-in-supplier" type="text" name="supplier" class="form-control" value="<?php echo $modal_value('stockInModal', 'supplier'); ?>"><?php echo $modal_error('stockInModal', 'supplier'); ?></div>
-                    <div><label class="form-label" for="stock-in-notes">Notes</label><textarea id="stock-in-notes" name="notes" class="form-control" rows="2"><?php echo $modal_value('stockInModal', 'notes'); ?></textarea><?php echo$modal_error('stockInModal', 'notes'); ?></div>
+                    <div><label class="form-label" for="stock-in-notes">Notes</label><textarea id="stock-in-notes" name="notes" class="form-control" rows="2"><?php echo $modal_value('stockInModal', 'notes'); ?></textarea><?php echo $modal_error('stockInModal', 'notes'); ?></div>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success">Confirm Stock In</button></div>
             </div>
@@ -183,7 +205,7 @@
     </div>
 </div>
 
-<!-- view categories modal -->
+<!-- categories -->
 <div class="modal fade" id="viewCategoriesModal" tabindex="-1" aria-labelledby="viewCategoriesModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -194,7 +216,7 @@
                 </div>
                 <ul class="list-group" id="categoryList">
                     <?php if (empty($categories)): ?><li class="list-group-item text-muted text-center empty-msg">No categories found.</li><?php endif; ?>
-                    <?php foreach ($categories as$category): ?>
+                    <?php foreach ($categories as $category): ?>
                         <li class="list-group-item d-flex justify-content-between align-items-center category-item">
                             <span class="category-name"><?php echo html_escape($category['name']); ?></span>
                             <?php echo form_open('StaffController/delete_category/' . (int) $category['id'], 'class="d-inline" onsubmit="return confirm(\'Delete this category?\');"'); ?>
@@ -209,10 +231,187 @@
     </div>
 </div>
 
-<!-- inventory history modal -->
 <div class="modal fade" id="inventoryHistoryModal" tabindex="-1" aria-labelledby="inventoryHistoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="inventoryHistoryModalLabel">Inventory Activity History</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Date</th><th>Product</th><th>Action</th><th>Change</th><th>Before</th><th>After</th><th>Reference</th><th>Supplier</th><th>Member / Staff</th><th>Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($inventory_logs)): ?>
+                                <tr><td colspan="10" class="text-center text-muted py-4">No inventory activity recorded yet.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($inventory_logs as $log): ?>
+                                    <tr>
+                                        <td class="text-nowrap"><?php echo ! empty($log['created_at']) ? html_escape(date('M d, Y H:i', strtotime($log['created_at']))) : '—'; ?></td>
+                                        <td><?php echo html_escape($log['product_name'] ?: 'Deleted product'); ?></td>
+                                        <td><?php echo html_escape(ucfirst(str_replace('_', ' ', $log['action']))); ?></td>
+                                        <td class="<?php echo (int) $log['quantity_change'] < 0 ? 'text-danger' : 'text-success'; ?>"><?php echo (int) $log['quantity_change'] > 0 ? '+' : ''; ?><?php echo (int) $log['quantity_change']; ?></td>
+                                        <td><?php echo (int) $log['previous_quantity']; ?></td>
+                                        <td><?php echo (int) $log['new_quantity']; ?></td>
+                                        <td><?php echo html_escape($log['reference_no'] ?: '—'); ?></td>
+                                        <td><?php echo html_escape($log['supplier'] ?: '—'); ?></td>
+                                        <td><?php echo html_escape($log['actor_name'] ?: 'Unknown user'); ?></td>
+                                        <td><?php echo html_escape($log['notes'] ?: '—'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var searchInput = document.getElementById('stock-in-search');
+    var productInput = document.getElementById('stock-in-product');
+    var resultsBox = document.getElementById('stock-in-product-results');
+    var searchStatus = document.getElementById('stock-in-search-status');
+    var searchUrl = <?php echo json_encode(site_url('staff/inventory/search-products')); ?>;
+    var searchTimer = null;
+    var requestNumber = 0;
+
+    function hideProductResults() {
+        if (!resultsBox || !searchInput) return;
+        resultsBox.hidden = true;
+        resultsBox.innerHTML = '';
+        searchInput.setAttribute('aria-expanded', 'false');
+    }
+
+    function selectProduct(product) {
+        if (!searchInput || !productInput) return;
+        requestNumber++;
+        if (searchTimer) window.clearTimeout(searchTimer);
+        productInput.value = product.id;
+        searchInput.value = product.name;
+        hideProductResults();
+        if (searchStatus) {
+            searchStatus.textContent = 'Selected ' + product.name + (product.sku ? ' · SKU ' + product.sku : '') + ' · Current stock: ' + product.stock_quantity + '.';
+        }
+    }
+
+    function showProductResults(products) {
+        if (!resultsBox || !searchInput) return;
+        resultsBox.innerHTML = '';
+        if (!products.length) {
+            var emptyMessage = document.createElement('div');
+            emptyMessage.className = 'list-group-item text-muted';
+            emptyMessage.textContent = 'No matching products found.';
+            resultsBox.appendChild(emptyMessage);
+        } else {
+            products.forEach(function (product) {
+                var option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'list-group-item list-group-item-action';
+                option.setAttribute('role', 'option');
+                option.setAttribute('aria-selected', 'false');
+                option.textContent = product.name + (product.sku ? ' · SKU ' + product.sku : '') + ' · Stock: ' + product.stock_quantity;
+                option.addEventListener('click', function () { selectProduct(product); });
+                resultsBox.appendChild(option);
+            });
+        }
+        resultsBox.hidden = false;
+        searchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    if (searchInput && productInput && resultsBox) {
+        searchInput.addEventListener('input', function () {
+            var query = searchInput.value.trim();
+            productInput.value = '';
+            requestNumber++;
+            var thisRequest = requestNumber;
+            if (searchTimer) window.clearTimeout(searchTimer);
+            hideProductResults();
+            if (!query) {
+                if (searchStatus) searchStatus.textContent = 'Search by product name or SKU.';
+                return;
+            }
+
+            if (searchStatus) searchStatus.textContent = 'Searching...';
+            searchTimer = window.setTimeout(function () {
+                if (searchStatus) searchStatus.textContent = 'Searching products…';
+                fetch(searchUrl + '?q=' + encodeURIComponent(query), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Product search failed.');
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        if (thisRequest !== requestNumber) return;
+                        var products = payload && Array.isArray(payload.results) ? payload.results : [];
+                        showProductResults(products);
+                        if (searchStatus) searchStatus.textContent = products.length ? 'Select a product from the results.' : 'No matching products found.';
+                    })
+                    .catch(function () {
+                        if (thisRequest !== requestNumber) return;
+                        hideProductResults();
+                        if (searchStatus) searchStatus.textContent = 'Could not search products. Please try again.';
+                    });
+            }, 1000);
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('#stock-in-search') && !event.target.closest('#stock-in-product-results')) {
+                hideProductResults();
+            }
+        });
+    }
+
+    document.querySelectorAll('.quick-stock-trigger').forEach(function (button) {
+        button.addEventListener('click', function () {
+            selectProduct({
+                id: button.getAttribute('data-id') || '',
+                name: button.getAttribute('data-name') || '',
+                sku: button.getAttribute('data-sku') || '',
+                stock_quantity: button.getAttribute('data-stock') || '0'
+            });
+        });
+    });
+    var modalId = <?php echo json_encode(isset($open_modal) ? $open_modal : ''); ?>;
+    var modalElement = modalId ? document.getElementById(modalId) : null;
+    if (modalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalElement).show();
+
+    var stockModal = document.getElementById('stockInModal');
+    if (stockModal) {
+        stockModal.addEventListener('hidden.bs.modal', function () {
+            if (searchTimer) window.clearTimeout(searchTimer);
+            requestNumber++;
+            if (searchInput) searchInput.value = '';
+            if (productInput) productInput.value = '';
+            hideProductResults();
+            if (searchStatus) searchStatus.textContent = 'Search by product name or SKU.';
+        });
+    }
+
+    var categorySearchInput = document.getElementById('categorySearchInput');
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener('keyup', function () {
+            var filter = this.value.toLowerCase().trim();
+            var items = document.querySelectorAll('#categoryList .category-item');
+            items.forEach(function (item) {
+                var nameText = item.querySelector('.category-name').textContent.toLowerCase();
+                if (nameText.indexOf(filter) > -1) {
+                    item.style.setProperty('display', 'flex', 'important');
+                } else {
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+        });
+    }
+});
+</script>
+<script src="<?php echo base_url('assets/js/product-pricing.js'); ?>"></script>

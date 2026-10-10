@@ -62,6 +62,26 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------------------------
+-- Inventory Logs
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS inventory_logs (
+  id               INT(11) NOT NULL AUTO_INCREMENT,
+  product_id       INT(11) NOT NULL,
+  user_id          INT(11) NOT NULL,
+  action           ENUM('add','remove','update','reservation','fulfillment') NOT NULL,
+  quantity_change  INT NOT NULL,
+  previous_quantity INT NOT NULL,
+  new_quantity     INT NOT NULL,
+  reference_no     VARCHAR(100) NULL,
+  supplier         VARCHAR(150) NULL,
+  notes            TEXT NULL,
+  created_at       TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inventory_logs_product_created (product_id, created_at),
+  KEY idx_inventory_logs_user_created (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
 -- Reservations
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reservations (
@@ -72,6 +92,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
   notes            TEXT          NULL,
   receipt_image    VARCHAR(255)  NULL,
+  or_number        VARCHAR(50)   NULL,
   expiry_date      DATETIME      NULL,
   created_at       DATETIME      NOT NULL,
   PRIMARY KEY (id),

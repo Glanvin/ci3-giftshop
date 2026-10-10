@@ -34,6 +34,9 @@
                     <?php if ($res['notes']): ?>
                         <p class="small"><b>Notes:</b> <?php echo nl2br(html_escape($res['notes'])); ?></p>
                     <?php endif; ?>
+                    <?php if ( ! empty($res['or_number'])): ?>
+                        <p class="small"><b>OR Number:</b> <?php echo html_escape($res['or_number']); ?></p>
+                    <?php endif; ?>
 
                     <?php if ($res['receipt_image']): ?>
                         <h6 class="fw-bold mt-3">Proof of Payment</h6>
@@ -98,6 +101,10 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <div class="mb-2" data-or-number-wrapper <?php echo $res['status'] === 'completed' ? '' : 'hidden'; ?>>
+                            <label for="reservation-or-number" class="form-label small">OR Number</label>
+                            <input type="text" id="reservation-or-number" name="or_number" class="form-control form-control-sm" maxlength="50" value="<?php echo html_escape($res['or_number'] ?? ''); ?>" <?php echo $res['status'] === 'completed' ? 'required' : ''; ?>>
+                        </div>
                         <button type="submit" name="update_status" value="1" class="btn btn-danger btn-sm w-100">
                             Update Status
                         </button>
@@ -110,6 +117,23 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var statusSelect = document.querySelector('[name="new_status"]');
+    var wrapper = document.querySelector('[data-or-number-wrapper]');
+    var orInput = document.getElementById('reservation-or-number');
+    if (!statusSelect || !wrapper || !orInput) return;
+
+    function updateOrNumberField() {
+        var required = statusSelect.value === 'completed';
+        wrapper.hidden = !required;
+        orInput.required = required;
+    }
+
+    statusSelect.addEventListener('change', updateOrNumberField);
+    updateOrNumberField();
+});
+</script>
 
 <?php if ($res['receipt_image']): ?>
     <div class="modal fade" id="receiptPreviewModal" tabindex="-1" aria-labelledby="receiptPreviewModalLabel" aria-hidden="true">

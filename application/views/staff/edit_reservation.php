@@ -57,9 +57,31 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="mb-3" data-or-number-wrapper <?php echo $res['status'] === 'completed' ? '' : 'hidden'; ?>>
+                    <label for="reservation-or-number" class="form-label">OR Number</label>
+                    <input type="text" id="reservation-or-number" name="or_number" class="form-control" maxlength="50" value="<?php echo html_escape($res['or_number'] ?? ''); ?>" <?php echo $res['status'] === 'completed' ? 'required' : ''; ?>>
+                    <small class="form-text text-muted">Required to mark this reservation as completed.</small>
+                </div>
                 <button type="submit" name="update_status" value="1" class="btn btn-danger px-4">Save Status</button>
                 <a href="<?php echo site_url('staff/reservation/' . (int) $res['id']); ?>" class="btn btn-outline-secondary">Back</a>
             <?php echo form_close(); ?>
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var statusSelect = document.querySelector('[name="new_status"]');
+    var wrapper = document.querySelector('[data-or-number-wrapper]');
+    var orInput = document.getElementById('reservation-or-number');
+    if (!statusSelect || !wrapper || !orInput) return;
+
+    function updateOrNumberField() {
+        var required = statusSelect.value === 'completed';
+        wrapper.hidden = !required;
+        orInput.required = required;
+    }
+
+    statusSelect.addEventListener('change', updateOrNumberField);
+    updateOrNumberField();
+});
+</script>
