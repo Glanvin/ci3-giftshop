@@ -41,6 +41,9 @@
                         <div class="col-md-4">Reserve until: <b><?php echo $res['expiry_date'] ? date('M d, Y', $expiry) : '—'; ?></b></div>
                         <div class="col-md-4">Total: <b class="text-danger">₱<?php echo number_format((float) $res['total_amount'], 2); ?></b></div>
                     </div>
+                    <?php if ( ! empty($res['or_number'])): ?>
+                        <p class="small mb-3"><b>OR Number:</b> <?php echo html_escape($res['or_number']); ?></p>
+                    <?php endif; ?>
 
                     <?php if ($res['notes']): ?>
                         <p class="small"><b>Notes:</b> <?php echo nl2br(html_escape($res['notes'])); ?></p>

@@ -127,7 +127,25 @@
                         <div class="col-md-6"><label class="form-label" for="new-product-name">Product Name</label><input id="new-product-name" type="text" name="name" class="form-control" value="<?php echo $modal_value('addProductModal', 'name'); ?>"><?php echo $modal_error('addProductModal', 'name'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-sku">SKU</label><input id="new-product-sku" type="text" name="sku" class="form-control" value="<?php echo $modal_value('addProductModal', 'sku'); ?>"><?php echo $modal_error('addProductModal', 'sku'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-category">Category</label><select id="new-product-category" name="category_id" class="form-select"><option value="">Select category</option><?php foreach ($categories as $category): ?><option value="<?php echo (int) $category['id']; ?>" <?php echo $modal_select('addProductModal', 'category_id', $category['id']); ?>><?php echo html_escape($category['name']); ?></option><?php endforeach; ?></select><?php echo $modal_error('addProductModal', 'category_id'); ?></div>
-                        <div class="col-md-6"><label class="form-label" for="new-product-price">Price</label><input id="new-product-price" type="number" name="price" class="form-control" min="0" max="99999999.99" step="0.01" value="<?php echo $modal_value('addProductModal', 'price'); ?>"><?php echo $modal_error('addProductModal', 'price'); ?></div>
+                        <div class="col-md-6"><label class="form-label" for="product-price">Base Price (₱)</label><input id="product-price" type="number" name="price" class="form-control" min="0" max="99999999.99" step="0.01" value="<?php echo $modal_value('addProductModal', 'price'); ?>"><?php echo $modal_error('addProductModal', 'price'); ?></div>
+                        <div class="col-md-6">
+                            <label for="product-markup" class="form-label">Markup (%)</label>
+                            <input type="number" id="product-markup" name="markup_percent" class="form-control" step="0.01" min="0" max="99999999.99" value="<?php echo $modal_value('addProductModal', 'markup_percent', '0'); ?>" aria-describedby="markup-help">
+                            <?php echo $modal_error('addProductModal', 'markup_percent'); ?>
+                            <small id="markup-help" class="text-muted d-block">Applied once when saved. Reopening starts from the saved price with 0% markup.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="selling-price-preview" class="form-label">Selling Price After Markup</label>
+                            <?php
+                                $preview_price = giftshop_price_with_markup(
+                                    set_value('price', '', FALSE),
+                                    set_value('markup_percent', '0', FALSE) ?: '0'
+                                );
+                            ?>
+                            <output id="selling-price-preview" for="product-price product-markup" class="d-block fs-4 fw-bold text-danger" aria-live="polite"><?php echo $preview_price !== NULL ? '₱' . number_format((float) $preview_price, 2) : 'Enter a valid price and markup.'; ?></output>
+                            <small class="text-muted d-block">This is the price customers will see after saving.</small>
+                            <noscript><small class="text-muted d-block">Add Product calculates the total. Enable JavaScript for a live preview.</small></noscript>
+                        </div>
                         <div class="col-md-6"><label class="form-label" for="new-product-stock">Stock Quantity</label><input id="new-product-stock" type="number" name="stock_quantity" class="form-control" min="0" step="1" value="<?php echo $modal_value('addProductModal', 'stock_quantity', '0'); ?>"><?php echo $modal_error('addProductModal', 'stock_quantity'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-threshold">Low Stock Threshold</label><input id="new-product-threshold" type="number" name="low_stock_threshold" class="form-control" min="0" step="1" value="<?php echo $modal_value('addProductModal', 'low_stock_threshold', '10'); ?>"><?php echo $modal_error('addProductModal', 'low_stock_threshold'); ?></div>
                         <div class="col-md-6"><label class="form-label" for="new-product-size">Size</label><input id="new-product-size" type="text" name="size" class="form-control" value="<?php echo $modal_value('addProductModal', 'size'); ?>"><?php echo $modal_error('addProductModal', 'size'); ?></div>
@@ -352,3 +370,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+<script src="<?php echo base_url('assets/js/product-pricing.js'); ?>"></script>

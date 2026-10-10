@@ -110,13 +110,45 @@ class StaffController extends CI_Controller {
 
 	public function add_product()
 	{
+		$this->load->helper('pricing');
 		if ($this->input->method(TRUE) !== 'POST') {
 			redirect('staff/inventory');
 		}
 
 		$this->form_validation->set_error_delimiters('', '');
-		$this->form_validation->set_rules($this->config->item('giftshop_product'));
+		$rules = $this->config->item('giftshop_product');
+		foreach ($rules as &$rule) {
+			if ($rule['field'] === 'price') {
+				$rule['label'] = 'Base Price';
+				$rule['rules'] = 'required|trim|regex_match[/^[0-9]{1,8}(?:[.][0-9]{1,2})?$/D]|greater_than[0]';
+				$rule['errors'] = array('regex_match' => 'Base Price must have up to two decimal places and be at most ₱99,999,999.99.', 'greater_than' => 'Base Price must be greater than zero.');
+			}
+		}
+		unset($rule);
+		$rules[] = array(
+			'field' => 'markup_percent',
+			'label' => 'Markup',
+			'rules' => 'trim|regex_match[/^[0-9]{1,8}(?:[.][0-9]{1,2})?$/D]',
+			'errors' => array('regex_match' => 'Markup must be a nonnegative percentage with up to two decimal places.')
+		);
+		$this->form_validation->set_rules($rules);
+
+		$posted_price = $this->input->post('price');
+		$posted_markup = $this->input->post('markup_percent');
+		if (($posted_price !== NULL && ! is_string($posted_price)) || ($posted_markup !== NULL && ! is_string($posted_markup))) {
+			$this->form_validation->set_error('price', 'Base Price and Markup must each be a single numeric value.');
+			$this->_render_inventory('addProductModal');
+			return;
+		}
 		if ($this->form_validation->run() === FALSE) {
+			$this->_render_inventory('addProductModal');
+			return;
+		}
+
+		$markup = $this->form_validation->set_value('markup_percent');
+		$total_price = giftshop_price_with_markup($this->form_validation->set_value('price'), $markup === '' ? '0' : $markup);
+		if ($total_price === NULL) {
+			$this->form_validation->set_error('markup_percent', 'The selling price after markup cannot exceed ₱99,999,999.99.');
 			$this->_render_inventory('addProductModal');
 			return;
 		}
@@ -131,7 +163,7 @@ class StaffController extends CI_Controller {
 			'name' => $this->input->post('name', TRUE),
 			'category_id' => (int) $this->input->post('category_id'),
 			'description' => $this->input->post('description', TRUE),
-			'price' => $this->input->post('price'),
+			'price' => $total_price,
 			'stock_quantity' => (int) $this->input->post('stock_quantity'),
 			'sku' => $this->input->post('sku', TRUE),
 			'size' => $this->input->post('size', TRUE),
@@ -382,13 +414,29 @@ class StaffController extends CI_Controller {
 	public function edit_reservation($id)
 	{
 		if ($this->input->post('update_status')) {
-			$this->form_validation->set_rules($this->config->item('giftshop_reservation_status'));
-			if ($this->form_validation->run() === TRUE) {
+			$rules = $this->config->item('giftshop_reservation_status');
+			$rules[] = array('field' => 'or_number', 'label' => 'OR Number', 'rules' => 'trim|max_length[50]');
+			$this->form_validation->set_rules($rules);
+			$posted_status = $this->input->post('new_status');
+			$posted_or_number = $this->input->post('or_number');
+			if (($posted_status !== NULL && ! is_string($posted_status)) || ($posted_or_number !== NULL && ! is_string($posted_or_number))) {
+				set_notification('danger', 'Enter a valid status and OR number.');
+				redirect('staff/reservation/edit/' . (int) $id);
+				return;
+			}
+			$is_valid = $this->form_validation->run();
+			if ($is_valid && $posted_status === 'completed' && trim((string) $posted_or_number) === '') {
+				set_notification('danger', 'Enter an OR number before completing the reservation.');
+				redirect('staff/reservation/edit/' . (int) $id);
+				return;
+			}
+			if ($is_valid) {
 				$new_status = $this->input->post('new_status', TRUE);
-				$this->Reservation_model->update_status((int) $id, $new_status);
+				$or_number = trim((string) $this->input->post('or_number', TRUE));
+				$this->Reservation_model->update_status((int) $id, $new_status, $or_number);
 				set_notification('success', 'Reservation status updated to ' . ucfirst($new_status) . '.');
 			} else {
-				set_notification('danger', 'Choose a valid reservation status.');
+				set_notification('danger', 'Choose a valid reservation status and enter an OR number of 50 characters or fewer.');
 			}
 			redirect('staff/reservations');
 		}
@@ -447,7 +495,7 @@ class StaffController extends CI_Controller {
 	/*  Helpers                                                            */
 	/* ------------------------------------------------------------------ */
 
-	public function callback_category_exists($category_id)
+	public function category_exists($category_id)
 	{
 		if ($this->Category_model->exists($category_id)) {
 			return TRUE;
@@ -456,7 +504,7 @@ class StaffController extends CI_Controller {
 		return FALSE;
 	}
 
-	public function callback_category_name_available($name)
+	public function category_name_available($name)
 	{
 		if ( ! $this->Category_model->name_exists($name)) {
 			return TRUE;
@@ -465,7 +513,7 @@ class StaffController extends CI_Controller {
 		return FALSE;
 	}
 
-	public function callback_sku_available($sku)
+	public function sku_available($sku)
 	{
 		if (trim((string) $sku) === '' || ! $this->Product_model->sku_exists($sku, $this->sku_exclude_id)) {
 			return TRUE;
@@ -474,7 +522,7 @@ class StaffController extends CI_Controller {
 		return FALSE;
 	}
 
-	public function callback_stock_product_exists($product_id)
+	public function stock_product_exists($product_id)
 	{
 		if ($this->Product_model->get_by_id((int) $product_id, FALSE)) {
 			return TRUE;
@@ -485,6 +533,7 @@ class StaffController extends CI_Controller {
 
 	private function _render_inventory($open_modal = '', $upload_error = NULL, $selected_stock_product = NULL)
 	{
+		$this->load->helper('pricing');
 		$filter = $this->input->get('filter', TRUE);
 		if ( ! in_array($filter, array('active', 'low', 'out'), TRUE)) {
 			$filter = 'all';
@@ -526,11 +575,22 @@ class StaffController extends CI_Controller {
 			return array('image_url' => '', 'error' => NULL);
 		}
 
-		$dir = FCPATH . 'uploads/products/';
-		if ( ! is_dir($dir)) {
-			if ( ! mkdir($dir, 0755, TRUE) && ! is_dir($dir)) {
+		$upload_directory = FCPATH . 'uploads/products';
+		if ( ! is_dir($upload_directory)) {
+			if ( ! mkdir($upload_directory, 0775, TRUE) && ! is_dir($upload_directory)) {
 				return array('image_url' => '', 'error' => 'The product upload folder could not be created.');
 			}
+		}
+		$dir = realpath($upload_directory);
+		if ($dir === FALSE) {
+			return array('image_url' => '', 'error' => 'The product upload folder could not be found.');
+		}
+		$dir = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		if ( ! is_really_writable($dir)) {
+			@chmod($dir, 0775);
+		}
+		if ( ! is_really_writable($dir)) {
+			return array('image_url' => '', 'error' => 'The web server cannot write to uploads/products/. Make that folder writable by the PHP server.');
 		}
 
 		$original = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($_FILES['product_image']['name']));

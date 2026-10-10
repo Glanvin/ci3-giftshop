@@ -67,9 +67,13 @@ class Reservation_model extends CI_Model {
 
 	// Moves a reservation to a new status, returning the update result.
 	// The caller is responsible for validating against STATUSES first.
-	public function update_status($id, $status)
+	public function update_status($id, $status, $or_number = NULL)
 	{
-		return $this->db->where('id', $id)->update('reservations', array('status' => $status));
+		$fields = array('status' => $status);
+		if ($status === 'completed') {
+			$fields['or_number'] = $or_number;
+		}
+		return $this->db->where('id', $id)->update('reservations', $fields);
 	}
 
 	// Stores the relative path of an uploaded receipt on the reservation.

@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
   notes            TEXT          NULL,
   receipt_image    VARCHAR(255)  NULL,
+  or_number        VARCHAR(50)   NULL,
   expiry_date      DATETIME      NULL,
   created_at       DATETIME      NOT NULL,
   PRIMARY KEY (id),
