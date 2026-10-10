@@ -123,7 +123,7 @@ class CartController extends CI_Controller {
 				'price' => (float) $product['price'],
 				'name' => $product['name'],
 				'options' => array(
-					'image_url' => ShopController::img_url($product['image_url'])
+					'image_url' => giftshop_product_image_path($product['image_url'])
 				)
 			));
 

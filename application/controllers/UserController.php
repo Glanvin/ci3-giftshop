@@ -56,7 +56,7 @@ class UserController extends CI_Controller {
 			'product' => $product,
 			'stock' => (int) $product['stock_quantity'],
 			'max_stock' => (int) $product['stock_quantity'],
-			'img_url' => ShopController::img_url($product['image_url'])
+			'img_url' => giftshop_product_image_path($product['image_url'])
 		);
 
 		$this->load->view('templates/user_header', $data);
