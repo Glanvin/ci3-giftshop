@@ -36,11 +36,24 @@
         <div class="alert alert-info" role="status"><?php echo html_escape($message); ?></div>
     <?php endif; ?>
 
+    <!-- Colored Filter Buttons without numbers -->
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <?php foreach (array('all' => 'All', 'active' => 'Active', 'low' => 'Low Stock', 'out' => 'Out of Stock') as $key => $label): ?>
+        <?php 
+            $filter_config = array(
+                'all'    => array('label' => 'All',          'active_class' => 'btn-dark',                 'inactive_class' => 'btn-outline-dark'),
+                'active' => array('label' => 'Active',       'active_class' => 'btn-success text-white',   'inactive_class' => 'btn-outline-success'),
+                'low'    => array('label' => 'Low Stock',    'active_class' => 'btn-warning text-dark',    'inactive_class' => 'btn-outline-warning'),
+                'out'    => array('label' => 'Out of Stock', 'active_class' => 'btn-danger text-white',    'inactive_class' => 'btn-outline-danger')
+            );
+        ?>
+        <?php foreach ($filter_config as $key => $cfg): ?>
+            <?php 
+                $is_selected = ($filter === $key);
+                $btn_class   = $is_selected ? $cfg['active_class'] . ' fw-bold' : $cfg['inactive_class'];
+            ?>
             <a href="<?php echo site_url('staff/inventory?filter=' . $key); ?>"
-               class="btn btn-sm <?php echo $filter === $key ? 'btn-dark' : 'btn-outline-secondary'; ?>">
-                <?php echo $label; ?> (<?php echo (int) ($counts[$key] ?? 0); ?>)
+               class="btn btn-sm <?php echo $btn_class; ?>">
+                <?php echo $cfg['label']; ?>
             </a>
         <?php endforeach; ?>
     </div>
@@ -57,7 +70,22 @@
                     <?php endif; ?>
                     <?php foreach ($products as $product): ?>
                         <?php
-                            $stock_state = $product['stock_quantity'] <= 0 ? 'Out of Stock' : ($product['stock_quantity'] <= $product['low_stock_threshold'] ? 'Low Stock' : ucfirst(str_replace('_', ' ', $product['status'])));
+                            if ($product['stock_quantity'] <= 0) {
+                                $stock_state = 'Out of Stock';
+                                $badge_class = 'bg-danger text-white';
+                            } elseif ($product['stock_quantity'] <= $product['low_stock_threshold']) {
+                                $stock_state = 'Low Stock';
+                                $badge_class = 'bg-warning text-dark';
+                            } else {
+                                $raw_status = strtolower($product['status']);
+                                if ($raw_status === 'active') {
+                                    $stock_state = 'Active';
+                                    $badge_class = 'bg-success text-white';
+                                } else {
+                                    $stock_state = ucfirst(str_replace('_', ' ', $product['status']));
+                                    $badge_class = 'bg-secondary text-white';
+                                }
+                            }
                         ?>
                         <tr>
                             <td>
@@ -72,7 +100,7 @@
                             <td><?php echo html_escape($product['category_name'] ?: '—'); ?></td>
                             <td>₱<?php echo number_format((float) $product['price'], 2); ?></td>
                             <td><?php echo (int) $product['stock_quantity']; ?></td>
-                            <td><?php echo html_escape($stock_state); ?></td>
+                            <td><span class="badge rounded-pill <?php echo $badge_class; ?>"><?php echo html_escape($stock_state); ?></span></td>
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-sm btn-outline-success quick-stock-trigger" data-id="<?php echo (int) $product['id']; ?>" data-bs-toggle="modal" data-bs-target="#stockInModal" aria-label="Stock in <?php echo html_escape($product['name']); ?>">Stock In</button>
                                 <a href="<?php echo site_url('staff/product/edit/' . (int) $product['id']); ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
@@ -88,6 +116,7 @@
     </div>
 </div>
 
+<!-- add product -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <?php echo form_open_multipart('staff/product/add'); ?>
@@ -114,6 +143,7 @@
     </div>
 </div>
 
+<!-- add category -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <?php echo form_open('StaffController/add_category'); ?>
@@ -126,6 +156,7 @@
     </div>
 </div>
 
+<!-- stockin -->
 <div class="modal fade" id="stockInModal" tabindex="-1" aria-labelledby="stockInModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <?php echo form_open('staff/process_stock_in'); ?>
@@ -144,17 +175,30 @@
     </div>
 </div>
 
+<!-- categories -->
 <div class="modal fade" id="viewCategoriesModal" tabindex="-1" aria-labelledby="viewCategoriesModalLabel" aria-hidden="true">
-    <div class="modal-dialog"><div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title" id="viewCategoriesModalLabel">Categories</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-        <div class="modal-body"><ul class="list-group">
-            <?php if (empty($categories)): ?><li class="list-group-item text-muted text-center">No categories found.</li><?php endif; ?>
-            <?php foreach ($categories as $category): ?>
-                <li class="list-group-item d-flex justify-content-between align-items-center"><span><?php echo html_escape($category['name']); ?></span><?php echo form_open('StaffController/delete_category/' . (int) $category['id'], 'class="d-inline" onsubmit="return confirm(\'Delete this category?\');"'); ?><button type="submit" class="btn btn-sm btn-outline-danger">Delete</button><?php echo form_close(); ?></li>
-            <?php endforeach; ?>
-        </ul></div>
-        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
-    </div></div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title" id="viewCategoriesModalLabel">Categories</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="categorySearchInput" class="form-control" placeholder="Search categories...">
+                </div>
+                <ul class="list-group" id="categoryList">
+                    <?php if (empty($categories)): ?><li class="list-group-item text-muted text-center empty-msg">No categories found.</li><?php endif; ?>
+                    <?php foreach ($categories as $category): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center category-item">
+                            <span class="category-name"><?php echo html_escape($category['name']); ?></span>
+                            <?php echo form_open('StaffController/delete_category/' . (int) $category['id'], 'class="d-inline" onsubmit="return confirm(\'Delete this category?\');"'); ?>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            <?php echo form_close(); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -168,5 +212,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var modalId = <?php echo json_encode(isset($open_modal) ? $open_modal : ''); ?>;
     var modalElement = modalId ? document.getElementById(modalId) : null;
     if (modalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalElement).show();
+
+    var categorySearchInput = document.getElementById('categorySearchInput');
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener('keyup', function () {
+            var filter = this.value.toLowerCase().trim();
+            var items = document.querySelectorAll('#categoryList .category-item');
+            items.forEach(function (item) {
+                var nameText = item.querySelector('.category-name').textContent.toLowerCase();
+                if (nameText.indexOf(filter) > -1) {
+                    item.style.setProperty('display', 'flex', 'important');
+                } else {
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+        });
+    }
 });
 </script>
