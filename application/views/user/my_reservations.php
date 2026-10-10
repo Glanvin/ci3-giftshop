@@ -69,16 +69,18 @@
                                     <span class="text-muted">—</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-end">
-                                <a href="<?php echo site_url('user/reservation/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-danger">View</a>
-                                <?php if (in_array($row['status'], array('pending', 'confirmed', 'ready'), TRUE)): ?>
-                                    <button type="button" class="btn btn-sm btn-danger ms-1 receipt-upload-trigger"
-                                            data-reservation-id="<?php echo (int) $row['id']; ?>"
-                                            data-bs-toggle="modal" data-bs-target="#receiptUploadModal">
-                                        <i class="bi bi-upload"></i>
-                                        <?php echo empty($row['receipt_image']) ? 'Attach Receipt' : 'Replace Receipt'; ?>
-                                    </button>
-                                <?php endif; ?>
+                            <td class="reservation-actions">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="<?php echo site_url('user/reservation/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-danger reservation-action-button">View</a>
+                                    <?php if (in_array($row['status'], array('pending', 'confirmed', 'ready'), TRUE)): ?>
+                                        <button type="button" class="btn btn-sm btn-danger reservation-action-button receipt-upload-trigger"
+                                                data-reservation-id="<?php echo (int) $row['id']; ?>"
+                                                data-bs-toggle="modal" data-bs-target="#receiptUploadModal">
+                                            <i class="bi bi-upload"></i>
+                                            <?php echo empty($row['receipt_image']) ? 'Attach Receipt' : 'Replace Receipt'; ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

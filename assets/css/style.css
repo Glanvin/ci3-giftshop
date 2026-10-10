@@ -669,6 +669,15 @@ body.area-auth {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+.reservation-action-button {
+    width: 138px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
 body.area-user {
     background: #faf9f6;
     font-family: 'Poppins', sans-serif;
@@ -705,4 +714,3 @@ body.area-staff {
     border: 1px solid #ced4da;
     margin-bottom: 20px;
 }
-
