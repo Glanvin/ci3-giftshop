@@ -31,6 +31,7 @@ $route['cart/submit'] = 'CartController/submit';
 
 $route['staff'] = 'StaffController/dashboard';
 $route['staff/inventory'] = 'StaffController/inventory';
+$route['staff/inventory/search-products'] = 'StaffController/search_stock_products';
 $route['staff/product/add'] = 'StaffController/add_product';
 $route['staff/product/edit/(:num)'] = 'StaffController/edit_product/$1';
 $route['staff/product/delete/(:num)'] = 'StaffController/delete_product/$1';

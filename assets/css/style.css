@@ -678,6 +678,21 @@ body.area-auth {
     white-space: nowrap;
 }
 
+.stock-product-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1060;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stock-product-results[hidden] {
+    display: none !important;
+}
+
 body.area-user {
     background: #faf9f6;
     font-family: 'Poppins', sans-serif;

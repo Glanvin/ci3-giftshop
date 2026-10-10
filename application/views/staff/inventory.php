@@ -102,7 +102,7 @@
                             <td><?php echo (int) $product['stock_quantity']; ?></td>
                             <td><span class="badge rounded-pill <?php echo $badge_class; ?>"><?php echo html_escape($stock_state); ?></span></td>
                             <td class="text-end text-nowrap">
-                                <button type="button" class="btn btn-sm btn-outline-success quick-stock-trigger" data-id="<?php echo (int) $product['id']; ?>" data-bs-toggle="modal" data-bs-target="#stockInModal" aria-label="Stock in <?php echo html_escape($product['name']); ?>">Stock In</button>
+                                <button type="button" class="btn btn-sm btn-outline-success quick-stock-trigger" data-id="<?php echo (int) $product['id']; ?>" data-name="<?php echo html_escape($product['name']); ?>" data-sku="<?php echo html_escape($product['sku'] ?: ''); ?>" data-stock="<?php echo (int) $product['stock_quantity']; ?>" data-bs-toggle="modal" data-bs-target="#stockInModal" aria-label="Stock in <?php echo html_escape($product['name']); ?>">Stock In</button>
                                 <a href="<?php echo site_url('staff/product/edit/' . (int) $product['id']); ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                 <?php echo form_open('staff/product/delete/' . (int) $product['id'], 'class="d-inline" onsubmit="return confirm(\'Delete this product?\');"'); ?>
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
@@ -163,7 +163,16 @@
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="stockInModalLabel">Receive Stock</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3"><label class="form-label" for="stock-in-product">Product</label><select id="stock-in-product" name="product_id" class="form-select"><option value="">Select product</option><?php foreach ($all_products as $product): ?><option value="<?php echo (int) $product['id']; ?>" <?php echo $modal_select('stockInModal', 'product_id', $product['id']); ?>><?php echo html_escape($product['name']); ?> (Stock: <?php echo (int) $product['stock_quantity']; ?>)</option><?php endforeach; ?></select><?php echo $modal_error('stockInModal', 'product_id'); ?></div>
+                    <div class="mb-3">
+                        <label class="form-label" for="stock-in-search">Search Product</label>
+                        <div class="position-relative">
+                            <input type="search" id="stock-in-search" class="form-control" autocomplete="off" placeholder="Type a product name or SKU" role="combobox" aria-autocomplete="list" aria-controls="stock-in-product-results" aria-expanded="false" value="<?php echo isset($selected_stock_product['name']) ? html_escape($selected_stock_product['name']) : ''; ?>">
+                            <input type="hidden" id="stock-in-product" name="product_id" value="<?php echo isset($selected_stock_product['id']) ? (int) $selected_stock_product['id'] : ''; ?>">
+                            <div id="stock-in-product-results" class="list-group stock-product-results" role="listbox" hidden></div>
+                        </div>
+                        <div id="stock-in-search-status" class="form-text" role="status" aria-live="polite">Search by product name or SKU. Results appear after a short pause.</div>
+                        <?php echo $modal_error('stockInModal', 'product_id'); ?>
+                    </div>
                     <div class="mb-3"><label class="form-label" for="stock-in-quantity">Quantity</label><input id="stock-in-quantity" type="number" name="quantity" class="form-control" min="1" step="1" value="<?php echo $modal_value('stockInModal', 'quantity'); ?>"><?php echo $modal_error('stockInModal', 'quantity'); ?></div>
                     <div class="mb-3"><label class="form-label" for="stock-in-reference">PO / Delivery Receipt # <span class="text-muted">(optional)</span></label><input id="stock-in-reference" type="text" name="reference_no" class="form-control" value="<?php echo $modal_value('stockInModal', 'reference_no'); ?>"><?php echo $modal_error('stockInModal', 'reference_no'); ?></div>
                     <div class="mb-3"><label class="form-label" for="stock-in-supplier">Supplier <span class="text-muted">(optional)</span></label><input id="stock-in-supplier" type="text" name="supplier" class="form-control" value="<?php echo $modal_value('stockInModal', 'supplier'); ?>"><?php echo $modal_error('stockInModal', 'supplier'); ?></div>
@@ -203,15 +212,128 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var productSelect = document.getElementById('stock-in-product');
+    var searchInput = document.getElementById('stock-in-search');
+    var productInput = document.getElementById('stock-in-product');
+    var resultsBox = document.getElementById('stock-in-product-results');
+    var searchStatus = document.getElementById('stock-in-search-status');
+    var searchUrl = <?php echo json_encode(site_url('staff/inventory/search-products')); ?>;
+    var searchTimer = null;
+    var requestNumber = 0;
+
+    function hideProductResults() {
+        if (!resultsBox || !searchInput) return;
+        resultsBox.hidden = true;
+        resultsBox.innerHTML = '';
+        searchInput.setAttribute('aria-expanded', 'false');
+    }
+
+    function selectProduct(product) {
+        if (!searchInput || !productInput) return;
+        requestNumber++;
+        if (searchTimer) window.clearTimeout(searchTimer);
+        productInput.value = product.id;
+        searchInput.value = product.name;
+        hideProductResults();
+        if (searchStatus) {
+            searchStatus.textContent = 'Selected ' + product.name + (product.sku ? ' · SKU ' + product.sku : '') + ' · Current stock: ' + product.stock_quantity + '.';
+        }
+    }
+
+    function showProductResults(products) {
+        if (!resultsBox || !searchInput) return;
+        resultsBox.innerHTML = '';
+        if (!products.length) {
+            var emptyMessage = document.createElement('div');
+            emptyMessage.className = 'list-group-item text-muted';
+            emptyMessage.textContent = 'No matching products found.';
+            resultsBox.appendChild(emptyMessage);
+        } else {
+            products.forEach(function (product) {
+                var option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'list-group-item list-group-item-action';
+                option.setAttribute('role', 'option');
+                option.setAttribute('aria-selected', 'false');
+                option.textContent = product.name + (product.sku ? ' · SKU ' + product.sku : '') + ' · Stock: ' + product.stock_quantity;
+                option.addEventListener('click', function () { selectProduct(product); });
+                resultsBox.appendChild(option);
+            });
+        }
+        resultsBox.hidden = false;
+        searchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    if (searchInput && productInput && resultsBox) {
+        searchInput.addEventListener('input', function () {
+            var query = searchInput.value.trim();
+            productInput.value = '';
+            requestNumber++;
+            var thisRequest = requestNumber;
+            if (searchTimer) window.clearTimeout(searchTimer);
+            hideProductResults();
+            if (!query) {
+                if (searchStatus) searchStatus.textContent = 'Search by product name or SKU. Results appear after a short pause.';
+                return;
+            }
+
+            if (searchStatus) searchStatus.textContent = 'Waiting to search…';
+            searchTimer = window.setTimeout(function () {
+                if (searchStatus) searchStatus.textContent = 'Searching products…';
+                fetch(searchUrl + '?q=' + encodeURIComponent(query), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Product search failed.');
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        if (thisRequest !== requestNumber) return;
+                        var products = payload && Array.isArray(payload.results) ? payload.results : [];
+                        showProductResults(products);
+                        if (searchStatus) searchStatus.textContent = products.length ? 'Select a product from the results.' : 'No matching products found.';
+                    })
+                    .catch(function () {
+                        if (thisRequest !== requestNumber) return;
+                        hideProductResults();
+                        if (searchStatus) searchStatus.textContent = 'Could not search products. Please try again.';
+                    });
+            }, 1000);
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('#stock-in-search') && !event.target.closest('#stock-in-product-results')) {
+                hideProductResults();
+            }
+        });
+    }
+
     document.querySelectorAll('.quick-stock-trigger').forEach(function (button) {
         button.addEventListener('click', function () {
-            if (productSelect) productSelect.value = button.getAttribute('data-id') || '';
+            selectProduct({
+                id: button.getAttribute('data-id') || '',
+                name: button.getAttribute('data-name') || '',
+                sku: button.getAttribute('data-sku') || '',
+                stock_quantity: button.getAttribute('data-stock') || '0'
+            });
         });
     });
     var modalId = <?php echo json_encode(isset($open_modal) ? $open_modal : ''); ?>;
     var modalElement = modalId ? document.getElementById(modalId) : null;
     if (modalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalElement).show();
+
+    var stockModal = document.getElementById('stockInModal');
+    if (stockModal) {
+        stockModal.addEventListener('hidden.bs.modal', function () {
+            if (searchTimer) window.clearTimeout(searchTimer);
+            requestNumber++;
+            if (searchInput) searchInput.value = '';
+            if (productInput) productInput.value = '';
+            hideProductResults();
+            if (searchStatus) searchStatus.textContent = 'Search by product name or SKU. Results appear after a short pause.';
+        });
+    }
 
     var categorySearchInput = document.getElementById('categorySearchInput');
     if (categorySearchInput) {

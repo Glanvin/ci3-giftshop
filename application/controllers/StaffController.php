@@ -44,6 +44,30 @@ class StaffController extends CI_Controller {
 		$this->_render_inventory();
 	}
 
+	/** Return product matches for the inventory stock-in search field. */
+	public function search_stock_products()
+	{
+		if ($this->input->method(TRUE) !== 'GET') {
+			show_error('Method not allowed.', 405);
+		}
+
+		$query = substr(trim((string) $this->input->get('q', TRUE)), 0, 100);
+		$products = $query === '' ? array() : $this->Product_model->search_for_stock_in($query);
+		$results = array();
+		foreach ($products as $product) {
+			$results[] = array(
+				'id' => (int) $product['id'],
+				'name' => $product['name'],
+				'sku' => (string) $product['sku'],
+				'stock_quantity' => (int) $product['stock_quantity']
+			);
+		}
+
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode(array('results' => $results)));
+	}
+
 	/**
 	 * Creates a product from the inventory form.
 	 *
@@ -140,7 +164,8 @@ class StaffController extends CI_Controller {
 		$this->form_validation->set_error_delimiters('', '');
 		$this->form_validation->set_rules($this->config->item('giftshop_stock_in'));
 		if ($this->form_validation->run() === FALSE) {
-			$this->_render_inventory('stockInModal');
+			$selected_product = $this->Product_model->get_by_id((int) $this->input->post('product_id', TRUE), FALSE);
+			$this->_render_inventory('stockInModal', NULL, $selected_product);
 			return;
 		}
 
@@ -458,7 +483,7 @@ class StaffController extends CI_Controller {
 		return FALSE;
 	}
 
-	private function _render_inventory($open_modal = '', $upload_error = NULL)
+	private function _render_inventory($open_modal = '', $upload_error = NULL, $selected_stock_product = NULL)
 	{
 		$filter = $this->input->get('filter', TRUE);
 		if ( ! in_array($filter, array('active', 'low', 'out'), TRUE)) {
@@ -470,12 +495,12 @@ class StaffController extends CI_Controller {
 			'active' => 'inventory',
 			'filter' => $filter,
 			'products' => $this->Product_model->get_by_filter($filter),
-			'all_products' => $this->Product_model->get_by_filter('all'),
 			'counts' => $this->Product_model->get_counts(),
 			'categories' => $this->Category_model->get_all(),
 			'message' => $this->session->flashdata('message'),
 			'open_modal' => $open_modal,
-			'upload_error' => $upload_error
+			'upload_error' => $upload_error,
+			'selected_stock_product' => $selected_stock_product
 		);
 
 		$this->load->view('templates/staff_header', $data);

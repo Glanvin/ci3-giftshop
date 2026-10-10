@@ -206,6 +206,27 @@ class Product_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
+	/** Search stock-in product choices by name or SKU. */
+	public function search_for_stock_in($query, $limit = 12)
+	{
+		$query = trim((string) $query);
+		if ($query === '') {
+			return array();
+		}
+
+		return $this->db
+			->select('id, name, sku, stock_quantity')
+			->from('products')
+			->group_start()
+				->like('name', $query)
+				->or_like('sku', $query)
+			->group_end()
+			->order_by('name', 'ASC')
+			->limit(max(1, min(25, (int) $limit)))
+			->get()
+			->result_array();
+	}
+
 	// ==========================================
 	// ADDED METHODS FOR STOCK IN OPERATIONS
 	// ==========================================
