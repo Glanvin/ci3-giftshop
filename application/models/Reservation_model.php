@@ -55,14 +55,37 @@ class Reservation_model extends CI_Model {
 	// Decrements stock in a single atomic UPDATE, clamping at zero.
 	// The status assignment is listed first so it reads the pre-decrement
 	// quantity; MySQL evaluates single-table SET clauses left to right.
-	public function decrement_stock($product_id, $quantity)
+	public function decrement_stock($product_id, $quantity, $user_id = NULL, $reference_no = NULL)
 	{
 		$quantity = (int) $quantity;
+		$product = $this->db->query(
+			'SELECT stock_quantity FROM products WHERE id = ? FOR UPDATE',
+			array((int) $product_id)
+		)->row_array();
+		if ( ! $product) {
+			return FALSE;
+		}
+
+		$previous_quantity = (int) $product['stock_quantity'];
+		$new_quantity = max($previous_quantity - $quantity, 0);
 
 		$this->db->set('status', 'IF(stock_quantity - ' . $quantity . " <= 0, 'out_of_stock', status)", FALSE)
 			->set('stock_quantity', 'GREATEST(stock_quantity - ' . $quantity . ', 0)', FALSE)
 			->where('id', $product_id)
 			->update('products');
+
+		if ($this->db->table_exists('inventory_logs')) {
+			$this->db->insert('inventory_logs', array(
+				'product_id' => (int) $product_id,
+				'user_id' => (int) $user_id,
+				'action' => 'reservation',
+				'quantity_change' => -$quantity,
+				'previous_quantity' => $previous_quantity,
+				'new_quantity' => $new_quantity,
+				'reference_no' => $reference_no
+			));
+		}
+		return $this->db->affected_rows() > 0;
 	}
 
 	// Moves a reservation to a new status, returning the update result.

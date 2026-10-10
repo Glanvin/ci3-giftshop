@@ -234,7 +234,7 @@ class CartController extends CI_Controller {
 
 		foreach ($items as $rowid => $item) {
 			$this->Reservation_model->add_item($reservation_id, (int) $item['id'], (int) $item['qty'], (float) $item['price']);
-			$this->Reservation_model->decrement_stock((int) $item['id'], (int) $item['qty']);
+			$this->Reservation_model->decrement_stock((int) $item['id'], (int) $item['qty'], $user_id, $res_code);
 			$this->cart->update(array('rowid' => $rowid, 'qty' => 0)); // drop the reserved item from the cart
 		}
 

@@ -255,31 +255,46 @@ class Product_model extends CI_Model {
 	 * @param  string|null $reference_no
 	 * @param  string|null $supplier
 	 * @param  string|null $notes
-	 * @param  int|null    $created_by Staff user ID
+	 * @param  int|null    $created_by User ID that performed the stock-in
 	 * @return bool
 	 */
 	public function process_stock_in($product_id, $quantity,$reference_no = NULL, $supplier = NULL, $notes = NULL, $created_by = NULL)
 	{
-		$this->db->trans_start();
-
-		// 1. Update product quantity
-		$this->add_stock($product_id,$quantity);
-
-		// 2. Insert audit/movement log if inventory_logs table exists
-		if ($this->db->table_exists('inventory_logs')) {$log = array(
-				'product_id'   => (int) $product_id,
-				'type'         => 'stock_in',
-				'quantity'     => (int) $quantity,
-				'reference_no' => $reference_no,
-				'supplier'     => $supplier,
-				'notes'        => $notes,
-				'created_by'   => $created_by,
-				'created_at'   => date('Y-m-d H:i:s')
-			);
-			$this->db->insert('inventory_logs',$log);
+		$this->db->trans_begin();
+		$product = $this->db->query(
+			'SELECT stock_quantity FROM products WHERE id = ? FOR UPDATE',
+			array((int) $product_id)
+		)->row_array();
+		if ( ! $product) {
+			$this->db->trans_rollback();
+			return FALSE;
 		}
 
-		$this->db->trans_complete();
-		return $this->db->trans_status();
+		$previous_quantity = (int) $product['stock_quantity'];
+		$new_quantity = $previous_quantity + (int) $quantity;
+		if ( ! $this->add_stock($product_id, $quantity)) {
+			$this->db->trans_rollback();
+			return FALSE;
+		}
+
+		if ($this->db->table_exists('inventory_logs')) {
+			$this->db->insert('inventory_logs', array(
+				'product_id' => (int) $product_id,
+				'user_id' => (int) $created_by,
+				'action' => 'add',
+				'quantity_change' => (int) $quantity,
+				'previous_quantity' => $previous_quantity,
+				'new_quantity' => $new_quantity,
+				'reference_no' => $reference_no,
+				'supplier' => $supplier,
+				'notes' => $notes
+			));
+		}
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->db->trans_rollback();
+			return FALSE;
+		}
+		return $this->db->trans_commit();
 	}
 }
