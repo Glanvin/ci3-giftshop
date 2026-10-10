@@ -272,11 +272,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchTimer) window.clearTimeout(searchTimer);
             hideProductResults();
             if (!query) {
-                if (searchStatus) searchStatus.textContent = 'Search by product name or SKU. Results appear after a short pause.';
+                if (searchStatus) searchStatus.textContent = 'Search by product name or SKU.';
                 return;
             }
 
-            if (searchStatus) searchStatus.textContent = 'Waiting to search…';
+            if (searchStatus) searchStatus.textContent = 'Searching...';
             searchTimer = window.setTimeout(function () {
                 if (searchStatus) searchStatus.textContent = 'Searching products…';
                 fetch(searchUrl + '?q=' + encodeURIComponent(query), {
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchInput) searchInput.value = '';
             if (productInput) productInput.value = '';
             hideProductResults();
-            if (searchStatus) searchStatus.textContent = 'Search by product name or SKU. Results appear after a short pause.';
+            if (searchStatus) searchStatus.textContent = 'Search by product name or SKU.';
         });
     }
 
