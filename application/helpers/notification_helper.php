@@ -64,7 +64,7 @@ if ( ! function_exists('render_notifications'))
 				? html_escape($notification['message'])
 				: $notification['message'];
 
-			$html .= '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">'
+			$html .= '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert" data-auto-dismiss="5000">'
 				. $message
 				. '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
 				. '</div>';
