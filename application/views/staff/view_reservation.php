@@ -103,7 +103,7 @@
                         </div>
                         <div class="mb-2" data-or-number-wrapper <?php echo $res['status'] === 'completed' ? '' : 'hidden'; ?>>
                             <label for="reservation-or-number" class="form-label small">OR Number</label>
-                            <input type="text" id="reservation-or-number" name="or_number" class="form-control form-control-sm" maxlength="50" value="<?php echo html_escape($res['or_number'] ?? ''); ?>" <?php echo $res['status'] === 'completed' ? 'required' : ''; ?>>
+                            <input disabled type="text" id="reservation-or-number" name="or_number" class="form-control form-control-sm" maxlength="50" value="<?php echo html_escape($res['or_number'] ?? ''); ?>" <?php echo $res['status'] === 'completed' ? 'required' : ''; ?>>
                         </div>
                         <button type="submit" name="update_status" value="1" class="btn btn-danger btn-sm w-100">
                             Update Status
